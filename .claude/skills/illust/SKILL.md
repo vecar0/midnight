@@ -34,8 +34,12 @@ AI 그림이 AI처럼 보이는 이유는 대부분 모델 한계가 아니라 "
 | 구도 | 카메라 높이, 화각, 자르는 위치, 시선 흐름 |
 | 질감 | 종이 결, 노이즈, 인쇄 느낌 |
 
-레퍼런스가 다른 작가의 그림이면 **한 장을 그대로 베끼지 않는다.** 이 앱은 Pages에
-공개돼 있으므로, 여러 장에서 요소(선·채색·조명)를 골라 섞고 구도·의상은 새로 정한다.
+**그림체 레퍼런스는 주 1장(많아야 비슷한 그림체 2장)으로 한다.** 그림체가 다른 이미지를
+여러 장 넣으면 모델이 평균을 내서 흐리멍덩한 "AI 평균 그림"이 되고, 그게 오히려 AI 티다.
+다른 그림에서 빌리고 싶은 요소(예: 조명만)는 이미지로 넣지 말고 1번 표처럼 글로 적어 넣는다.
+
+레퍼런스가 다른 작가의 그림이면 **그 그림 자체를 다시 그리지 않는다.** 이 앱은 Pages에
+공개돼 있으므로 그림체(선·채색·조명)만 빌리고, 구도·포즈·의상·캐릭터는 우리 것으로 정한다.
 
 ## 2. 요청 체크리스트
 
@@ -62,7 +66,7 @@ AI 그림이 AI처럼 보이는 이유는 대부분 모델 한계가 아니라 "
   - `slight asymmetry in pose and hair, natural imperfection`
   - `limited palette of black, white, greys, one small accent`
 - 금지는 문장 끝에 3~5개만: `no text, no extra fingers, no glowing particles everywhere, no ornate filler patterns`
-- 레퍼런스는 역할을 나눠서 넣는다: 그림체용 1~2장 + 캐릭터 외모용 1장.
+- 레퍼런스는 역할을 나눠서 넣는다: 그림체용 1장(비슷한 그림체면 2장까지) + 캐릭터 외모용 1장.
   프롬프트에 "first image: style only, second image: character face and hair"처럼 역할을 적는다.
 
 모델은 `models_explore(action:'recommend')` 로 고른다. 레퍼런스 여러 장을 받는 모델
