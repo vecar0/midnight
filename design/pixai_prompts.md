@@ -34,28 +34,28 @@ A Korean game-CG style anime illustration with a near-monochrome palette of blac
 She is a young woman with long, straight silver-grey hair and blunt, straight-cut bangs with side locks framing her face. She has droopy, half-closed grey eyes with a thick black upper lash line flicked outward, red eyeshadow smudged under her eyes, and a thin black choker. Her expression is cool and a little bored, and she looks straight into the camera.
 ```
 
-### Vol. I — 공부 모드, 꾸안꾸
+### Vol. I — 밤샘 공부 (고프코어 스트리트)
 
 ```
-She is a hip, modern Cinderella in a street fashion magazine photoshoot, in study mode. She wears a cropped grey zip-up hoodie, half unzipped over a white ribbed tank top, black wide-leg track pants with a thin white side stripe, chunky white sneakers, big over-ear headphones resting around her neck, thin silver round glasses, silver hair clips and a few thin silver chain necklaces. Her hair is loosely half tied up. She sits on a metal bar stool with her left foot on the footrest so that knee is raised, her left forearm resting across that knee and her hand propping up her chin while loosely holding a single silver pen. Her right leg hangs down toward the floor and her right hand rests on the seat. The camera angle is slightly low, and she is shown in full body from head to shoes against a plain light grey background.
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, pulling an all-nighter. She wears an oversized heather-grey hoodie layered under a cropped black puffer vest, baggy washed-grey carpenter jeans, chunky silver-grey trail sneakers, big over-ear headphones around her neck, thin rectangular silver glasses, stacked silver rings, black nail polish, and a small black crossbody bag hanging from her shoulder with a tiny silver pumpkin keychain. Her hair is loosely half tied up with a black claw clip. She sits on a metal bar stool with her left foot on the footrest so that knee is raised, her left forearm resting across that knee and her hand propping up her chin while loosely holding a single silver pen. Her right leg hangs down toward the floor and her right hand rests on the seat. The camera angle is slightly low, and she is shown in full body from head to shoes against a plain light grey background.
 ```
 
-### Vol. II — 꾸미기 시작
+### Vol. II — 마법이 걸리기 시작 (Y2K 레이어드)
 
 ```
-She is a hip, modern Cinderella in a street fashion magazine photoshoot, starting to dress up. She wears a white off-shoulder cropped knit sweater, a pleated denim mini skirt, slouchy grey leg warmers, loafers, a black leather jacket draped over her shoulders, a silver chain belt and silver hair clips. She sits on a metal bar stool, leaning forward with both forearms crossed on her raised knee, a small notebook held loosely in one hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, as the magic begins. She wears a cropped grey knit bolero over a white lace-trimmed camisole, a low-rise black pleated micro skirt layered over baggy grey track pants, slouchy white leg warmers, chunky black Mary Jane platform shoes, a vintage black leather racer jacket slipping off both shoulders, black ribbon bows clipped into her hair, and a small silver bird charm necklace. She sits on a metal bar stool, leaning forward with both forearms crossed on her raised knee, a small notebook held loosely in one hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
-### Vol. III — 나갈 준비 끝
+### Vol. III — 나갈 준비 끝 (고딕 테크웨어)
 
 ```
-She is a hip, modern Cinderella in a street fashion magazine photoshoot, ready to go out. She wears a short black satin slip dress over a sheer black mesh long-sleeve top, an oversized black bomber jacket slipping off one shoulder, sheer black tights, chunky black platform boots and small silver earrings. She sits on a metal bar stool with her legs crossed, one hand running through her hair. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, ready to go out. She wears a sheer black mesh long-sleeve top with an asymmetric cutout, a thin silver chain harness over it, black satin parachute cargo pants with silver buckles, a cropped black bomber jacket with a faux fur collar slipping off one shoulder, black fingerless gloves, silver ear cuffs, and knee-high lace-up black platform boots. She sits on a metal bar stool with her legs crossed, one hand running through her hair. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
-### Vol. IV — 완성 룩 (자정)
+### Vol. IV — 자정 (완성 룩)
 
 ```
-She is a hip, modern Cinderella in a street fashion magazine photoshoot at midnight, in her finished look. She wears a black strapless corset top, layered silver chain necklaces, a black leather mini skirt and a sparkling crystal hairpin instead of a tiara. On her feet are clear transparent high heels, and one heel is slipping off and dangling from her toes, like Cinderella's glass slipper about to fall. She sits on a metal bar stool with one knee raised, her forearm across it and her chin resting on her hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
+She is a hip, modern Cinderella in a street fashion magazine photoshoot at midnight, in her finished look. She wears a metallic silver cropped corset top, an oversized black tailored blazer worn off her shoulders, low-rise baggy black jeans with a silver wallet chain, a rhinestone hair chain draped across her head like a modern tiara, and a small silver clock pendant stopped at twelve. On her feet are clear transparent platform heels, and one heel is slipping off and dangling from her toes, like Cinderella's glass slipper about to fall. She sits on a metal bar stool with one knee raised, her forearm across it and her chin resting on her hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
 ### 피할 것 문단 (모든 Vol. 공통, 프롬프트 끝에)
@@ -64,7 +64,6 @@ She is a hip, modern Cinderella in a street fashion magazine photoshoot at midni
 Avoid: ball gowns, frilly princess dresses, any text, logos or watermarks, extra fingers or limbs, a 3D or photographic look, airbrushed soft rendering, flat webtoon coloring, other hair colors, glowing eyes, and extra people.
 ```
 
-- Vol. III은 슬립 원피스를 입으니 그대로 둬도 된다(피하는 건 무도회 드레스·프릴 드레스뿐).
 - 네거티브 칸이 있는 모델(Haruka v2 등)이면 이 문단 대신 네거티브 칸에 같은 내용을 쓴다.
 
 ## 3. 뽑은 뒤
