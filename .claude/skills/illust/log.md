@@ -28,3 +28,25 @@
 - 레퍼런스: 사용자 제공 NovelAI 결과물 2장(그림체만), `p1` 뺌, 얼굴은 글로 설명
 - 프롬프트: SKILL.md "Minuit 그림체 규칙"을 문장으로 + 포즈를 좌우 다리까지 구체적으로
 - 결과: 포즈·다리 구조·소품 개수는 맞음. 그림체는 여전히 레퍼런스와 다름(평평한 채색, 머리 하이라이트·역광 대비 없음)
+
+## Céleste 원화 (새 컨셉 Bleu Minuit) — 2026-10-24
+- 원본: PixAI(사용자 생성, LoRA 사용) 768×1280, 앞머리 없음 → `work/celeste/base_nobangs_768.png`
+- PixAI 프롬프트: 태그형. facing viewer, straight-on, crossed arms on horizontal ledge, horizontal black railing, both eyes visible,
+  half-closed eyes, blue eyes, mole under eye, black hair + blue inner hair, turtleneck, black see-through shirt, black bustier,
+  layered silver chains, large silver star pendant, black corset belt, patent leather, liquid metal buckle, single crescent moon earring,
+  gradient black→blue nails, plain white background (네거티브 칸 없음 → 넣는 태그만으로 밀어줌)
+- 앞머리: PixAI 인페인트 실패 → Higgsfield gpt_image_2_5 (medium, 1k, 0.5크레딧/장) 편집 "add straight blunt bangs… keep everything else identical"
+  2장 중 A(job 545d292a) 채택. 전체를 다시 그리는 편집이라 원본과 픽셀 정렬은 안 맞음(768×1296)
+- 손등 금 편집(job 9358abf6): 반영 안 됨 → 코드 레이어로 그리기로
+- 업스케일: bytedance 4k (2크레딧) → 2435×4096, 위에 흰 여백 18% 덧대 2435×4833 → `work/celeste/base_bangs_4k.png`
+- **변경(같은 날)**: 사용자 선택으로 앞머리 없는 원본을 최종 원화로. PixAI 원본(media 8a2c60bc)을 bytedance 4k 업스케일(2크레딧)
+  → 2457×4096, 위에 흰 여백 18% → `work/celeste/base_4k.png`. 앞머리 편집본(base_bangs_4k)은 삭제
+
+## Céleste 부품·오브젝트 — 2026-10-24 (gpt_image_2_5)
+- 눈 감은 얼굴: 얼굴 크롭(4K 760,1120–1960,2400) 편집, medium 1k ×2 (1크레딧) → 1번 채택 `work/celeste/eyes_closed_edit.png`
+- 입 모양: 같은 크롭 편집 medium 1k — 미소 "very faint soft satisfied closed-lip smile", 찡그림 "lips pressed into small flat frown + inner brows together"
+  → `mouth_smile_edit.png`, `face_frown_edit.png` (SIFT 정렬 후 패치로 잘라 씀, tools/celeste_parts.py)
+- 오브젝트 시트: medium 4k 3:2 background transparent (1.25크레딧) — 달·석고 천사상·석고 손 두 개·백합·대리석 체스 킹/나이트·고딕 창.
+  "real photographs converted to grayscale, soft studio light upper left, fine film grain, matte" → 한 번에 성공. `objects_sheet.png`
+- 뻗는 손: 1차(손바닥 방향)는 손바닥인데 손톱이 보이는 해부 오류 + 손톱 과하게 김 → 2차 "BACK of the hand faces the viewer…
+  medium-length almond nails (not claws)" + 원화 레퍼런스, medium 2k transparent → 성공(왼손으로 나와 좌우 반전). `hand_reach.png`

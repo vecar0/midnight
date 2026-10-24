@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Céleste rig</title>
+<style>
+  html,body{margin:0;height:100%;background:#eeeeea;font:13px/1.4 system-ui,sans-serif;color:#111}
+  #c{display:block;height:100vh;width:auto;margin:0 auto;touch-action:none}
+  #ui{position:fixed;left:12px;bottom:12px;background:#fffc;padding:8px 10px;border:1px solid #111}
+  #ui input{width:180px;vertical-align:middle}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">단계 <input id="stage" type="range" min="0" max="1" step="0.001" value="1"> <span id="sv">1.00</span>
+  표정 <select id="ex"><option value="">기본</option><option value="smile">완주(미소)</option><option value="frown">포기(찡그림)</option></select></div>
+<script>
+// Céleste 시제품: 원화 한 장을 삼각형 그물로 휘어 숨쉬기·고개·귀걸이·눈 깜빡임·단계별 색을 낸다
+const PARTS = 'parts/';
+const cv = document.getElementById('c');
+const gl = cv.getContext('webgl', {premultipliedAlpha:true, alpha:true, antialias:true});
+let META, IW, IH, NX = 60, NY = 120, SWAY;
+const sm = (a,b,x)=>{ const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
+
+function load(src){ return new Promise(r=>{ const i = new Image(); i.onload = ()=>r(i); i.src = PARTS+src; }); }
+function tex(img, unit){
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0+unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  for(const [k,v] of [[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])
+    gl.texParameteri(gl.TEXTURE_2D, k, v);
+  return t;
+}
+const VS = `attribute vec2 p; attribute vec2 uv; varying vec2 v; uniform vec2 res;
+  void main(){ v = uv; gl_Position = vec4(p.x/res.x*2.-1., 1.-p.y/res.y*2., 0., 1.); }`;
+const FS = `precision mediump float; varying vec2 v;
+  uniform sampler2D col, msk, eye, smT, frT; uniform vec4 eyeR, smR, frR; uniform float blink, smile, frown; uniform vec3 stage;
+  vec3 patch(vec3 c, float a, sampler2D t, vec4 r, float w){   // 얼굴 편집 패치를 w만큼 덮는다
+    vec2 e = (v - r.xy) / r.zw;
+    if(w <= 0. || e.x < 0. || e.y < 0. || e.x > 1. || e.y > 1.) return c;
+    vec4 k = texture2D(t, e); return mix(c, k.rgb / max(k.a, .001) * a, k.a * w); }
+  void main(){
+    vec4 c = texture2D(col, v);
+    c.rgb = patch(c.rgb, c.a, frT, frR, frown);
+    c.rgb = patch(c.rgb, c.a, smT, smR, smile);
+    c.rgb = patch(c.rgb, c.a, eye, eyeR, blink);
+    vec3 m = texture2D(msk, v).rgb;                  // r=손톱 g=머리 b=눈
+    float g = max(max(m.r*(1.-stage.x), m.g*(1.-stage.y)), m.b*(1.-stage.z));
+    float l = dot(c.rgb, vec3(.299,.587,.114));
+    gl_FragColor = vec4(mix(c.rgb, vec3(l*1.05), g), c.a);
+  }`;
+function prog(){
+  const sh = (t,s)=>{ const o = gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o);
+    if(!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
+  const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER,VS)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(p); gl.useProgram(p); return p;
+}
+
+// 그물 꼭짓점마다 부위별 무게
+let base, pos, uvs, idx, W;
+function buildMesh(){
+  base = []; uvs = []; W = [];
+  const [nx, ny] = META.pivot.neck, [mx, my] = META.earMoon, [sx, sy] = META.earStar;
+  for(let j=0;j<=NY;j++) for(let i=0;i<=NX;i++){
+    const x = i/NX*IW, y = j/NY*IH; base.push(x, y); uvs.push(i/NX, j/NY);
+    const out = sm(300, 430, Math.abs(x-nx));                       // 얼굴 옆 머리카락일수록 1
+    const head = 1 - sm(1130 - out*130, 1260 + out*120, y);         // 고개: 목 위는 1, 어깨에서 0
+    const breath = 1 - sm(1500, 1950, y);                           // 숨: 팔이 난간에 닿는 곳은 고정
+    const box = (x0,x1,y0,y1,f)=>sm(x0-f,x0+f,x)*(1-sm(x1-f,x1+f,x))*sm(y0-f,y0+f,y)*(1-sm(y1-f,y1+f,y));
+    const moon = box(mx-48, mx+70, my-4, my+185, 14), star = box(sx-24, sx+26, sy-4, sy+160, 10);
+    const sw = SWAY.data[(Math.min(SWAY.height-1, y/IH*SWAY.height|0)*SWAY.width + Math.min(SWAY.width-1, x/IW*SWAY.width|0))*4]/255;
+    W.push([head, breath, moon, star, sw]);
+  }
+  idx = [];
+  for(let j=0;j<NY;j++) for(let i=0;i<NX;i++){ const a = j*(NX+1)+i, b = a+1, c = a+NX+1, d = c+1; idx.push(a,b,c, b,d,c); }
+  pos = new Float32Array(base.length);
+}
+const rot = (x,y,cx,cy,a)=>{ const s = Math.sin(a), c = Math.cos(a), dx = x-cx, dy = y-cy; return [cx+dx*c-dy*s, cy+dx*s+dy*c]; };
+
+let tilt = {x:0, y:0}, EXPR = '';
+addEventListener('pointermove', e=>{ tilt.x = e.clientX/innerWidth*2-1; tilt.y = e.clientY/innerHeight*2-1; });
+addEventListener('deviceorientation', e=>{ if(e.gamma!=null){ tilt.x = Math.max(-1,Math.min(1,e.gamma/30)); tilt.y = Math.max(-1,Math.min(1,(e.beta-45)/30)); } });
+
+function pose(t){
+  const [nx, ny] = META.pivot.neck, [mx, my] = META.earMoon, [sx, sy] = META.earStar;
+  const ha = (Math.sin(t*.45)*1.0 + Math.sin(t*.17)*.5 + tilt.x*1.2) * Math.PI/180;   // 고개 기울기
+  const hx = tilt.x*4, hy = tilt.y*3;
+  const br = (Math.sin(t*1.25)*.5+.5) * 5;                                             // 숨 (px)
+  const swing = ha*-2.2;                                                              // 고개 반대로 흔들리는 귀걸이
+  const ma = (Math.sin(t*1.6)*3.5) * Math.PI/180 + swing, sa = (Math.sin(t*1.9+1)*4) * Math.PI/180 + swing;
+  for(let k=0;k<W.length;k++){
+    let x = base[k*2], y = base[k*2+1]; const [h, b, mo, st, sw] = W[k];
+    if(sw){ x += (Math.sin(t*1.05 - y*.004)*5 + Math.sin(t*2.3 - y*.011)*1.6 - ha*180)*sw; }   // 머리카락: 아래로 갈수록 늦게 따라온다
+    if(mo){ const r = rot(x,y,mx,my,ma); x += (r[0]-x)*mo; y += (r[1]-y)*mo; }
+    if(st){ const r = rot(x,y,sx,sy,sa); x += (r[0]-x)*st; y += (r[1]-y)*st; }
+    if(h){ const r = rot(x,y,nx,ny,ha); x += (r[0]-x+hx)*h; y += (r[1]-y+hy)*h; }
+    y -= br*b;
+    pos[k*2] = x; pos[k*2+1] = y;
+  }
+}
+function blinkAt(t){                       // 4~6초마다 0.16초 깜빡
+  const period = 4.7, p = (t % period) / period * period;
+  const d = .16; return p < d ? Math.sin(p/d*Math.PI) : 0;
+}
+
+let P, bPos, U;
+function draw(t, stage){
+  pose(t);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bPos); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(U.p, 2, gl.FLOAT, false, 0, 0);
+  // 단계: 0~.25 눈(→ 뜸), .25~.5 머리, .5~.75 손톱 순서로 색이 돌아온다
+  gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
+  const closed = 1 - sm(.12, .25, stage);  // 석고 단계는 눈을 감고 있다
+  gl.uniform1f(U.blink, Math.max(closed, blinkAt(t)));
+  gl.uniform1f(U.smile, EXPR === 'smile' ? 1 : 0); gl.uniform1f(U.frown, EXPR === 'frown' ? 1 : 0);
+  gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+}
+
+(async ()=>{
+  META = await (await fetch(PARTS+'parts.json')).json(); [IW, IH] = META.size;
+  const [ci, mi, ei, si, smi, fri] = await Promise.all(['char.webp','mask.webp','eyes_closed.webp','sway.png','mouth_smile.webp','face_frown.webp'].map(load));
+  { const c = document.createElement('canvas'); c.width = si.width; c.height = si.height; const x = c.getContext('2d'); x.drawImage(si,0,0); SWAY = x.getImageData(0,0,c.width,c.height); }
+  cv.width = IW; cv.height = IH; gl.viewport(0,0,IW,IH);
+  P = prog(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  buildMesh();
+  U = {p: gl.getAttribLocation(P,'p'), uv: gl.getAttribLocation(P,'uv')};
+  for(const n of ['res','col','msk','eye','smT','frT','eyeR','smR','frR','blink','smile','frown','stage']) U[n] = gl.getUniformLocation(P,n);
+  [ci, mi, ei, smi, fri].forEach((im,i)=>tex(im,i));
+  ['col','msk','eye','smT','frT'].forEach((n,i)=>gl.uniform1i(U[n], i)); gl.uniform2f(U.res, IW, IH);
+  const rect = (u, im, [x, y])=>gl.uniform4f(u, x/IW, y/IH, im.naturalWidth/IW, im.naturalHeight/IH);
+  rect(U.eyeR, ei, META.patches.eyes_closed); rect(U.smR, smi, META.patches.mouth_smile); rect(U.frR, fri, META.patches.face_frown);
+  const bUV = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bUV); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(U.uv); gl.vertexAttribPointer(U.uv, 2, gl.FLOAT, false, 0, 0);
+  bPos = gl.createBuffer(); gl.enableVertexAttribArray(U.p);
+  const bI = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bI); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+  const sl = document.getElementById('stage'), sv = document.getElementById('sv');
+  window.renderAt = (t, s, ex)=>{ EXPR = ex || ''; draw(t, s); return cv.toDataURL('image/png'); };
+  document.getElementById('ex').onchange = e=>{ EXPR = e.target.value; };   // 캡처용
+  window.ready = true;
+  if(location.hash === '#still') return;
+  const loop = ms=>{ sv.textContent = (+sl.value).toFixed(2); draw(ms/1000, +sl.value); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+})();
+</script></body></html>
