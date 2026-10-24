@@ -71,3 +71,33 @@ Avoid: ball gowns, frilly princess dresses, any text, logos or watermarks, extra
 1. 마음에 드는 걸 Claude에게 보낸다 → `illust` 스킬 점검표로 점검
 2. 힉스필드로 배경 제거 · 업스케일 (소량 크레딧)
 3. 앱 화면(큰 틀 + 흑백 장식)에 넣어 확인
+
+---
+
+## 4. 한 번에 4벌 (2×2 라인업 시트) — 세부 퀄리티 강화판
+
+배치 4장은 **같은 프롬프트를 4번** 뽑는 기능이라 장마다 다른 옷을 지시할 수 없다.
+그래서 **한 장 안에 2×2로 4벌을 그리게** 하고, 잘라서 쓴다. 장점: 네 칸의 얼굴이 같은 사람으로 맞는다.
+
+- 비율 **1:1, 최대 해상도(Tsubaki.3 기준 2048×2048)** → 칸당 약 1024×1024
+- 잘라낸 뒤 힉스필드 업스케일로 키운다. 최종 품질을 더 올리려면, 잘 나온 칸을 레퍼런스로 넣고 그 Vol.만 따로 다시 뽑는다.
+
+```
+A 2x2 grid fashion lineup sheet showing the SAME girl four times, one full-body portrait in each panel, with thin white gutters between the panels and no text anywhere. Every panel uses the same face, hair, art style and lighting; only the outfit and pose change.
+
+Art style for all panels: Korean game-CG anime illustration, near-monochrome palette of black, white and cool greys, the only warm color is the pink in her skin. Crisp dark ink line art with slightly jagged hand-drawn edges, thick outer contour and very thin inner lines. Hair drawn as dozens of separate ultra-thin strands with flyaway strands, very glossy with a sharp white highlight band and deep shadows underneath. Hard-edged cel shading with detailed cast shadows. Porcelain-pale skin with tiny glossy shine spots, pink blush on cheeks, nose tip and ears, glossy coral lips. Strong backlight and white rim light, high contrast, crisp focus, highly detailed.
+
+The girl: long straight silver-grey hair with blunt straight-cut bangs and side locks, droopy half-closed grey eyes with a thick black upper lash line and red eyeshadow under the eyes, a thin black choker, cool slightly bored expression, looking straight at the camera. Each panel: she sits on the same metal bar stool against a plain light grey background, slightly low camera angle, head to shoes visible.
+
+Detail quality for all panels: anatomically correct hands with exactly five slender fingers and visible knuckles, natural wrists; clear glass lenses on any glasses so her eyes are fully visible; realistic fabric texture and folds (soft knit ribbing, stiff denim seams, glossy leather creases, sheer mesh, satin sheen); crisp small accessories with readable shapes; clean symmetrical shoes; no merged or extra limbs.
+
+Top-left panel (all-nighter study look): an oversized heather-grey hoodie under a cropped black puffer vest, baggy washed-grey carpenter jeans, chunky white trail sneakers, big over-ear headphones around her neck, thin rectangular silver glasses with clear lenses, stacked silver rings, black nail polish, a small black crossbody bag with a clearly pumpkin-shaped tiny silver keychain, hair half tied up with a black claw clip. One knee raised with that foot on the stool's footrest, forearm across the knee, chin propped on her hand, a single silver pen held between her fingers away from her mouth, the other leg hanging down.
+
+Top-right panel (the magic begins): a cropped grey knit bolero over a white lace-trimmed camisole, a low-rise black pleated micro skirt layered over baggy grey track pants, slouchy white leg warmers, chunky black Mary Jane platform shoes, a black leather racer jacket slipping off both shoulders, black ribbon bows in her hair, a small silver bird charm necklace. Leaning forward with both forearms crossed on her raised knee, a small notebook in one hand.
+
+Bottom-left panel (ready to go out): a sheer black mesh long-sleeve top with an asymmetric cutout, a thin silver chain harness over it, black satin parachute cargo pants with silver buckles, a cropped black bomber jacket with a faux fur collar slipping off one shoulder, black fingerless gloves, silver ear cuffs, knee-high lace-up black platform boots. Legs crossed, one hand running through her hair.
+
+Bottom-right panel (midnight, finished look): a metallic silver cropped corset top, an oversized black tailored blazer worn off her shoulders, low-rise baggy black jeans with a silver wallet chain, a rhinestone hair chain draped across her head like a modern tiara, a small silver clock pendant stopped at twelve, clear transparent platform heels with one heel slipping off and dangling from her toes like a glass slipper about to fall. One knee raised, forearm across it, chin resting on her hand.
+
+Avoid: ball gowns, princess dresses, text, numbers, logos, watermarks, panel borders with ornaments, different faces between panels, extra fingers, fused fingers, extra limbs, tinted glasses, a 3D or photographic look, airbrushed soft rendering, flat webtoon coloring, other hair colors, glowing eyes, extra people.
+```
