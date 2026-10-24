@@ -123,6 +123,26 @@ AI 그림이 AI처럼 보이는 이유는 대부분 모델 한계가 아니라 "
 4. `python3 tools/build.py` → `python3 tools/smoke.py` → `.shots/` 스크린샷을 직접 열어 확인.
 5. 사용자에게 전/후를 짧게 보고하고, 쓴 크레딧과 남은 잔액을 한 줄로 알린다.
 
+
+## Minuit 그림체 규칙 (사용자 레퍼런스 = NovelAI 결과물 기준)
+
+원래 조합: sushispin(가장 강함), kithera, yd (orange maru), channel (caststation), modare, ratatatat74, m m pb
++ jaggy lines, thick outlines, cel shading, detailed shadows, glossy skin, backlighting, rim light, high contrast, game cg.
+(웹 검색으로 확인된 건 yd = 한국 작가·Orange Maru 서클 대표, channel = 한국 일러스트레이터·애니메이터 정도. 단부루는 접속 차단)
+
+눈에 보이는 특징:
+- 흑·백·쿨그레이 위주, 따뜻한 색은 피부의 분홍뿐
+- 짙고 살짝 거친 잉크 선, 외곽선 굵고 안쪽 선 가늘다, 머리카락은 가는 선 수십 가닥 + 잔머리
+- 머리에 굵은 흰 하이라이트 띠, 그 아래 깊은 어둠 (윤기)
+- 반쯤 감은 처진 눈, 굵게 뻗은 윗속눈썹, 눈 아래 붉은 화장
+- 도자기 피부에 광택 점, 볼·코끝·귀에 진한 홍조, 광택 있는 산호색 입술
+- 각진 셀 그림자 + 머리카락 그림자가 얼굴·목에 떨어짐, 검은 옷은 반짝이는 하이라이트
+- 강한 역광·윤곽 빛, 뿌연 밝은 배경
+
+**주의: 힉스필드 모델(Nano Banana Pro, GPT Image)로는 이 그림체가 재현되지 않았다**(2026-10-24, 3회 시도).
+설명·레퍼런스 2장을 넣어도 평평한 웹툰 채색으로 나온다. 캐릭터는 NovelAI에서 뽑고,
+힉스필드는 배경 제거·업스케일·부분 수정에만 쓰는 것을 기본으로 한다.
+
 ## 쓴 프롬프트 남기기
 
 확정된 그림마다 모델·프롬프트·레퍼런스·시드를 `.claude/skills/illust/log.md` 에 덧붙인다.
