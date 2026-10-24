@@ -50,3 +50,6 @@
   "real photographs converted to grayscale, soft studio light upper left, fine film grain, matte" → 한 번에 성공. `objects_sheet.png`
 - 뻗는 손: 1차(손바닥 방향)는 손바닥인데 손톱이 보이는 해부 오류 + 손톱 과하게 김 → 2차 "BACK of the hand faces the viewer…
   medium-length almond nails (not claws)" + 원화 레퍼런스, medium 2k transparent → 성공(왼손으로 나와 좌우 반전). `hand_reach.png`
+- 밑그림(리깅용): 원화(4K→1229×2048) 편집 medium 2k ×2 (2크레딧) "Remove ONLY the long side locks in front of shoulders… and both
+  earrings. Paint what was hidden underneath…" → 2번 채택(어깨 뒤 파란 머리 유지) `work/celeste/underlayer_edit.png`.
+  편집본은 몸통이 원화보다 약간 크고 아래로 내려가 다시 그려짐 → 얼굴 위(y<1075)는 원화, 아래는 편집본으로 합침 (tools/celeste_layers.py)
