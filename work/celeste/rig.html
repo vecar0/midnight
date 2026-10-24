@@ -9,13 +9,14 @@
   #ui input{width:180px;vertical-align:middle}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="ui">단계 <input id="stage" type="range" min="0" max="1" step="0.001" value="1"> <span id="sv">1.00</span></div>
+<div id="ui">단계 <input id="stage" type="range" min="0" max="1" step="0.001" value="1"> <span id="sv">1.00</span>
+  표정 <select id="ex"><option value="">기본</option><option value="smile">완주(미소)</option><option value="frown">포기(찡그림)</option></select></div>
 <script>
 // Céleste 시제품: 원화 한 장을 삼각형 그물로 휘어 숨쉬기·고개·귀걸이·눈 깜빡임·단계별 색을 낸다
 const PARTS = 'parts/';
 const cv = document.getElementById('c');
 const gl = cv.getContext('webgl', {premultipliedAlpha:true, alpha:true, antialias:true});
-let META, IW, IH, NX = 36, NY = 72;
+let META, IW, IH, NX = 60, NY = 120, SWAY;
 const sm = (a,b,x)=>{ const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
 
 function load(src){ return new Promise(r=>{ const i = new Image(); i.onload = ()=>r(i); i.src = PARTS+src; }); }
@@ -30,12 +31,16 @@ function tex(img, unit){
 const VS = `attribute vec2 p; attribute vec2 uv; varying vec2 v; uniform vec2 res;
   void main(){ v = uv; gl_Position = vec4(p.x/res.x*2.-1., 1.-p.y/res.y*2., 0., 1.); }`;
 const FS = `precision mediump float; varying vec2 v;
-  uniform sampler2D col, msk, eye; uniform vec4 eyeR; uniform float blink; uniform vec3 stage;
+  uniform sampler2D col, msk, eye, smT, frT; uniform vec4 eyeR, smR, frR; uniform float blink, smile, frown; uniform vec3 stage;
+  vec3 patch(vec3 c, float a, sampler2D t, vec4 r, float w){   // 얼굴 편집 패치를 w만큼 덮는다
+    vec2 e = (v - r.xy) / r.zw;
+    if(w <= 0. || e.x < 0. || e.y < 0. || e.x > 1. || e.y > 1.) return c;
+    vec4 k = texture2D(t, e); return mix(c, k.rgb / max(k.a, .001) * a, k.a * w); }
   void main(){
     vec4 c = texture2D(col, v);
-    vec2 e = (v - eyeR.xy) / eyeR.zw;
-    if(blink > 0. && e.x >= 0. && e.y >= 0. && e.x <= 1. && e.y <= 1.){
-      vec4 k = texture2D(eye, e); c.rgb = mix(c.rgb, k.rgb / max(k.a, .001) * c.a, k.a * blink); }
+    c.rgb = patch(c.rgb, c.a, frT, frR, frown);
+    c.rgb = patch(c.rgb, c.a, smT, smR, smile);
+    c.rgb = patch(c.rgb, c.a, eye, eyeR, blink);
     vec3 m = texture2D(msk, v).rgb;                  // r=손톱 g=머리 b=눈
     float g = max(max(m.r*(1.-stage.x), m.g*(1.-stage.y)), m.b*(1.-stage.z));
     float l = dot(c.rgb, vec3(.299,.587,.114));
@@ -60,7 +65,8 @@ function buildMesh(){
     const breath = 1 - sm(1500, 1950, y);                           // 숨: 팔이 난간에 닿는 곳은 고정
     const box = (x0,x1,y0,y1,f)=>sm(x0-f,x0+f,x)*(1-sm(x1-f,x1+f,x))*sm(y0-f,y0+f,y)*(1-sm(y1-f,y1+f,y));
     const moon = box(mx-48, mx+70, my-4, my+185, 14), star = box(sx-24, sx+26, sy-4, sy+160, 10);
-    W.push([head, breath, moon, star]);
+    const sw = SWAY.data[(Math.min(SWAY.height-1, y/IH*SWAY.height|0)*SWAY.width + Math.min(SWAY.width-1, x/IW*SWAY.width|0))*4]/255;
+    W.push([head, breath, moon, star, sw]);
   }
   idx = [];
   for(let j=0;j<NY;j++) for(let i=0;i<NX;i++){ const a = j*(NX+1)+i, b = a+1, c = a+NX+1, d = c+1; idx.push(a,b,c, b,d,c); }
@@ -68,7 +74,7 @@ function buildMesh(){
 }
 const rot = (x,y,cx,cy,a)=>{ const s = Math.sin(a), c = Math.cos(a), dx = x-cx, dy = y-cy; return [cx+dx*c-dy*s, cy+dx*s+dy*c]; };
 
-let tilt = {x:0, y:0};
+let tilt = {x:0, y:0}, EXPR = '';
 addEventListener('pointermove', e=>{ tilt.x = e.clientX/innerWidth*2-1; tilt.y = e.clientY/innerHeight*2-1; });
 addEventListener('deviceorientation', e=>{ if(e.gamma!=null){ tilt.x = Math.max(-1,Math.min(1,e.gamma/30)); tilt.y = Math.max(-1,Math.min(1,(e.beta-45)/30)); } });
 
@@ -80,7 +86,8 @@ function pose(t){
   const swing = ha*-2.2;                                                              // 고개 반대로 흔들리는 귀걸이
   const ma = (Math.sin(t*1.6)*3.5) * Math.PI/180 + swing, sa = (Math.sin(t*1.9+1)*4) * Math.PI/180 + swing;
   for(let k=0;k<W.length;k++){
-    let x = base[k*2], y = base[k*2+1]; const [h, b, mo, st] = W[k];
+    let x = base[k*2], y = base[k*2+1]; const [h, b, mo, st, sw] = W[k];
+    if(sw){ x += (Math.sin(t*1.05 - y*.004)*5 + Math.sin(t*2.3 - y*.011)*1.6 - ha*180)*sw; }   // 머리카락: 아래로 갈수록 늦게 따라온다
     if(mo){ const r = rot(x,y,mx,my,ma); x += (r[0]-x)*mo; y += (r[1]-y)*mo; }
     if(st){ const r = rot(x,y,sx,sy,sa); x += (r[0]-x)*st; y += (r[1]-y)*st; }
     if(h){ const r = rot(x,y,nx,ny,ha); x += (r[0]-x+hx)*h; y += (r[1]-y+hy)*h; }
@@ -102,27 +109,31 @@ function draw(t, stage){
   gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
   const closed = 1 - sm(.12, .25, stage);  // 석고 단계는 눈을 감고 있다
   gl.uniform1f(U.blink, Math.max(closed, blinkAt(t)));
+  gl.uniform1f(U.smile, EXPR === 'smile' ? 1 : 0); gl.uniform1f(U.frown, EXPR === 'frown' ? 1 : 0);
   gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
 }
 
 (async ()=>{
   META = await (await fetch(PARTS+'parts.json')).json(); [IW, IH] = META.size;
-  const [ci, mi, ei] = await Promise.all([load('char.webp'), load('mask.webp'), load('eyes_closed.webp')]);
+  const [ci, mi, ei, si, smi, fri] = await Promise.all(['char.webp','mask.webp','eyes_closed.webp','sway.png','mouth_smile.webp','face_frown.webp'].map(load));
+  { const c = document.createElement('canvas'); c.width = si.width; c.height = si.height; const x = c.getContext('2d'); x.drawImage(si,0,0); SWAY = x.getImageData(0,0,c.width,c.height); }
   cv.width = IW; cv.height = IH; gl.viewport(0,0,IW,IH);
   P = prog(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   buildMesh();
   U = {p: gl.getAttribLocation(P,'p'), uv: gl.getAttribLocation(P,'uv')};
-  for(const n of ['res','col','msk','eye','eyeR','blink','stage']) U[n] = gl.getUniformLocation(P,n);
-  tex(ci,0); tex(mi,1); tex(ei,2);
-  gl.uniform1i(U.col,0); gl.uniform1i(U.msk,1); gl.uniform1i(U.eye,2); gl.uniform2f(U.res, IW, IH);
-  const [ex, ey] = META.eyesClosed; gl.uniform4f(U.eyeR, ex/IW, ey/IH, ei.naturalWidth/IW, ei.naturalHeight/IH);
+  for(const n of ['res','col','msk','eye','smT','frT','eyeR','smR','frR','blink','smile','frown','stage']) U[n] = gl.getUniformLocation(P,n);
+  [ci, mi, ei, smi, fri].forEach((im,i)=>tex(im,i));
+  ['col','msk','eye','smT','frT'].forEach((n,i)=>gl.uniform1i(U[n], i)); gl.uniform2f(U.res, IW, IH);
+  const rect = (u, im, [x, y])=>gl.uniform4f(u, x/IW, y/IH, im.naturalWidth/IW, im.naturalHeight/IH);
+  rect(U.eyeR, ei, META.patches.eyes_closed); rect(U.smR, smi, META.patches.mouth_smile); rect(U.frR, fri, META.patches.face_frown);
   const bUV = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bUV); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(U.uv); gl.vertexAttribPointer(U.uv, 2, gl.FLOAT, false, 0, 0);
   bPos = gl.createBuffer(); gl.enableVertexAttribArray(U.p);
   const bI = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bI); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
   const sl = document.getElementById('stage'), sv = document.getElementById('sv');
-  window.renderAt = (t, s)=>{ draw(t, s); return cv.toDataURL('image/png'); };   // 캡처용
+  window.renderAt = (t, s, ex)=>{ EXPR = ex || ''; draw(t, s); return cv.toDataURL('image/png'); };
+  document.getElementById('ex').onchange = e=>{ EXPR = e.target.value; };   // 캡처용
   window.ready = true;
   if(location.hash === '#still') return;
   const loop = ms=>{ sv.textContent = (+sl.value).toFixed(2); draw(ms/1000, +sl.value); requestAnimationFrame(loop); };

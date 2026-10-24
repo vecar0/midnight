@@ -3,10 +3,20 @@
   1228,
   2416
  ],
- "eyesClosed": [
-  441,
-  731
- ],
+ "patches": {
+  "eyes_closed": [
+   441,
+   731
+  ],
+  "mouth_smile": [
+   578,
+   985
+  ],
+  "face_frown": [
+   410,
+   711
+  ]
+ },
  "pivot": {
   "neck": [
    680,

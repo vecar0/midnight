@@ -41,3 +41,12 @@
 - 업스케일: bytedance 4k (2크레딧) → 2435×4096, 위에 흰 여백 18% 덧대 2435×4833 → `work/celeste/base_bangs_4k.png`
 - **변경(같은 날)**: 사용자 선택으로 앞머리 없는 원본을 최종 원화로. PixAI 원본(media 8a2c60bc)을 bytedance 4k 업스케일(2크레딧)
   → 2457×4096, 위에 흰 여백 18% → `work/celeste/base_4k.png`. 앞머리 편집본(base_bangs_4k)은 삭제
+
+## Céleste 부품·오브젝트 — 2026-10-24 (gpt_image_2_5)
+- 눈 감은 얼굴: 얼굴 크롭(4K 760,1120–1960,2400) 편집, medium 1k ×2 (1크레딧) → 1번 채택 `work/celeste/eyes_closed_edit.png`
+- 입 모양: 같은 크롭 편집 medium 1k — 미소 "very faint soft satisfied closed-lip smile", 찡그림 "lips pressed into small flat frown + inner brows together"
+  → `mouth_smile_edit.png`, `face_frown_edit.png` (SIFT 정렬 후 패치로 잘라 씀, tools/celeste_parts.py)
+- 오브젝트 시트: medium 4k 3:2 background transparent (1.25크레딧) — 달·석고 천사상·석고 손 두 개·백합·대리석 체스 킹/나이트·고딕 창.
+  "real photographs converted to grayscale, soft studio light upper left, fine film grain, matte" → 한 번에 성공. `objects_sheet.png`
+- 뻗는 손: 1차(손바닥 방향)는 손바닥인데 손톱이 보이는 해부 오류 + 손톱 과하게 김 → 2차 "BACK of the hand faces the viewer…
+  medium-length almond nails (not claws)" + 원화 레퍼런스, medium 2k transparent → 성공(왼손으로 나와 좌우 반전). `hand_reach.png`

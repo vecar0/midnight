@@ -22,7 +22,17 @@ BG_SEEDS = [(256, 915), (268, 1047), (242, 1151), (962, 1148), (90, 1540),
             (79, 2205), (1102, 2214), (977, 2217), (295, 2319)]
 # 눈 감은 패치를 붙일 타원 (얼굴 영역 기준 반 크기 좌표): 중심, 반지름, 각도
 EYES = [(148, 322, 72, 56, -12), (345, 256, 112, 66, -14)]
+MOUTH = [(275, 471, 62, 30, -6)]
+BROWS = [(122, 252, 78, 26, -5), (318, 206, 96, 30, -16)]
+# 얼굴 편집본 → 패치 이름, 편집 파일, 남길 부분
+FACE_EDITS = [('eyes_closed', 'eyes_closed_edit.png', EYES),
+              ('mouth_smile', 'mouth_smile_edit.png', MOUTH),
+              ('face_frown', 'face_frown_edit.png', MOUTH + BROWS)]
 NAILS_Y = 1620                           # 이보다 아래의 파란색은 손톱(+머리끝)
+# 흔들리는 머리카락 구역 (반 크기 좌표): x0, x1, y0, y1, 뿌리 y
+SWAY_ZONES = [(180, 500, 980, 1700, 960),     # 왼쪽 어깨 앞으로 흘러내린 머리
+              (30, 240, 1080, 1760, 1000),    # 왼쪽 바깥 가는 머리
+              (820, 1010, 980, 1350, 960)]    # 오른쪽 어깨 위 머리
 
 
 def cutout(img):
@@ -45,16 +55,16 @@ def cutout(img):
     return col.astype(np.uint8), a
 
 
-def closed_eyes(face_half):
-    """편집본을 원본 얼굴에 맞춰 정렬하고 눈 부분만 잘라 패치로."""
-    ed = cv2.imread(str(W / 'eyes_closed_edit.png'))
+def face_patch(face_half, name, ellipses):
+    """얼굴 편집본(name)을 원본 얼굴에 맞춰 정렬하고 ellipses 부분만 남긴다. 반환: 정렬된 그림, 마스크"""
+    ed = cv2.imread(str(W / name))
     fw, fh = FACE[2] - FACE[0], FACE[3] - FACE[1]
     ed = cv2.resize(ed, (fw, round(ed.shape[0] * fw / ed.shape[1])))
     orig = cv2.resize(face_half, (fw, fh))
     g1, g2 = (cv2.cvtColor(m, cv2.COLOR_BGR2GRAY) for m in (orig, ed))
     keep = np.full(g1.shape, 255, np.uint8)
-    for cx, cy, ax, ay, _ in EYES:            # 바뀐 눈은 정렬 기준에서 뺀다
-        keep[(cy - ay) * 2 - 40:(cy + ay) * 2 + 40, (cx - ax) * 2 - 40:(cx + ax) * 2 + 40] = 0
+    for cx, cy, ax, ay, _ in ellipses:        # 바뀐 곳은 정렬 기준에서 뺀다
+        keep[max(0, (cy - ay) * 2 - 40):(cy + ay) * 2 + 40, max(0, (cx - ax) * 2 - 40):(cx + ax) * 2 + 40] = 0
     sift = cv2.SIFT_create(4000)
     k1, d1 = sift.detectAndCompute(g1, keep)
     k2, d2 = sift.detectAndCompute(g2, None)
@@ -65,7 +75,7 @@ def closed_eyes(face_half):
     al = cv2.warpAffine(ed, M, (fw, fh), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     al = cv2.resize(al, face_half.shape[1::-1], interpolation=cv2.INTER_AREA)
     mask = np.zeros(face_half.shape[:2], np.float32)
-    for cx, cy, ax, ay, ang in EYES:
+    for cx, cy, ax, ay, ang in ellipses:
         cv2.ellipse(mask, (cx, cy), (ax, ay), ang, 0, 360, 1, -1)
     mask = cv2.GaussianBlur(mask, (0, 0), 7)
     return al, mask
@@ -92,11 +102,15 @@ def main():
     col, a = cutout(img)
 
     fx0, fy0, fx1, fy1 = (round(v * S) for v in FACE)
-    al, emask = closed_eyes(img[fy0:fy1, fx0:fx1])
-    ys, xs = np.where(emask > 0.01)
-    ex0, ex1, ey0, ey1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
-    patch_a = emask[ey0:ey1, ex0:ex1]
-    webp(OUT / 'eyes_closed.webp', al[ey0:ey1, ex0:ex1], patch_a)
+    patches = {}
+    for name, file, ell in FACE_EDITS:
+        al_, m_ = face_patch(img[fy0:fy1, fx0:fx1], file, ell)
+        ys, xs = np.where(m_ > 0.01)
+        px0, px1, py0, py1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+        webp(OUT / f'{name}.webp', al_[py0:py1, px0:px1], m_[py0:py1, px0:px1])
+        patches[name] = [int(fx0 + px0), int(fy0 + py0)]
+        if name == 'eyes_closed':
+            al, emask = al_, m_
 
     blue = soft_blue(img) * a
     yy, xx = np.mgrid[:H, :Wd]
@@ -114,6 +128,18 @@ def main():
     hair += nails * (1 - hands)
     nails *= hands
 
+    # 흔들리는 머리카락 무게 지도 (1/4 크기): 어두운 머리 픽셀 × 구역 × 뿌리에서 멀수록
+    dark = ((cv2.cvtColor(col, cv2.COLOR_BGR2GRAY) < 50) & (a > .5)).astype(np.float32)
+    hairpx = np.maximum(dark, hair)
+    sway = np.zeros((H, Wd), np.float32)
+    for x0, x1, y0, y1, root in SWAY_ZONES:
+        z = np.clip(np.minimum.reduce([(xx - x0) / 30, (x1 - xx) / 30, (yy - y0) / 30, (y1 - yy) / 60]), 0, 1)
+        sway = np.maximum(sway, z * np.clip((yy - root) / 320, 0, 1))
+    sway *= 1 - np.clip((yy - 1540) / 60, 0, 1) * (xx > 330)          # 뷔스티에는 빼기
+    sway = cv2.GaussianBlur(sway * cv2.GaussianBlur(hairpx, (0, 0), 6), (0, 0), 10)
+    sway /= max(sway.max(), 1e-6)
+    cv2.imwrite(str(OUT / 'sway.png'), cv2.resize((sway * 255).astype(np.uint8), (Wd // 4, H // 4), interpolation=cv2.INTER_AREA))
+
     lum = (0.114 * col[..., 0] + 0.587 * col[..., 1] + 0.299 * col[..., 2])[..., None]
     grey = (col * (1 - blue[..., None]) + lum * blue[..., None] * 1.05).clip(0, 255).astype(np.uint8)
 
@@ -123,7 +149,7 @@ def main():
 
     meta = {
         'size': [Wd, H],
-        'eyesClosed': [int(fx0 + ex0), int(fy0 + ey0)],
+        'patches': patches,
         'pivot': {'neck': [680, 1120], 'chest': [640, 1500]},
         'mouth': [655, 1028],
         'earMoon': [452, 962], 'earStar': [852, 890],
