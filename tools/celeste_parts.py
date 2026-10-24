@@ -30,9 +30,9 @@ FACE_EDITS = [('eyes_closed', 'eyes_closed_edit.png', EYES),
               ('face_frown', 'face_frown_edit.png', MOUTH + BROWS)]
 NAILS_Y = 1620                           # 이보다 아래의 파란색은 손톱(+머리끝)
 # 흔들리는 머리카락 구역 (반 크기 좌표): x0, x1, y0, y1, 뿌리 y
-SWAY_ZONES = [(180, 500, 980, 1700, 960),     # 왼쪽 어깨 앞으로 흘러내린 머리
-              (30, 240, 1080, 1760, 1000),    # 왼쪽 바깥 가는 머리
-              (820, 1010, 980, 1350, 960)]    # 오른쪽 어깨 위 머리
+SWAY_ZONES = [(180, 500, 1060, 1700, 1130),   # 왼쪽 어깨 앞으로 흘러내린 머리 (턱 아래부터)
+              (30, 240, 1080, 1760, 1060),    # 왼쪽 바깥 가는 머리
+              (820, 1010, 1060, 1350, 1110)]  # 오른쪽 어깨 위 머리
 
 
 def cutout(img):
@@ -137,6 +137,14 @@ def main():
         sway = np.maximum(sway, z * np.clip((yy - root) / 320, 0, 1))
     sway *= 1 - np.clip((yy - 1540) / 60, 0, 1) * (xx > 330)          # 뷔스티에는 빼기
     sway = cv2.GaussianBlur(sway * cv2.GaussianBlur(hairpx, (0, 0), 6), (0, 0), 10)
+    # 얼굴 피부는 절대 흔들리지 않게 (밝은 피부 덩어리를 넉넉히 키워서 뺀다)
+    skin = np.zeros((H, Wd), np.uint8)
+    fz = (cv2.cvtColor(col, cv2.COLOR_BGR2GRAY) > 190) & (a > .5)
+    skin[fy0:fy1, fx0:fx1] = fz[fy0:fy1, fx0:fx1]
+    n_, lab_, st_, _ = cv2.connectedComponentsWithStats(skin)
+    face = (lab_ == 1 + int(np.argmax(st_[1:, 4]))).astype(np.uint8)
+    face = cv2.dilate(face, np.ones((45, 45), np.uint8))
+    sway *= 1 - cv2.GaussianBlur(face.astype(np.float32), (0, 0), 12)
     sway /= max(sway.max(), 1e-6)
     cv2.imwrite(str(OUT / 'sway.png'), cv2.resize((sway * 255).astype(np.uint8), (Wd // 4, H // 4), interpolation=cv2.INTER_AREA))
 
