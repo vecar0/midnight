@@ -28,3 +28,14 @@
 - 레퍼런스: 사용자 제공 NovelAI 결과물 2장(그림체만), `p1` 뺌, 얼굴은 글로 설명
 - 프롬프트: SKILL.md "Minuit 그림체 규칙"을 문장으로 + 포즈를 좌우 다리까지 구체적으로
 - 결과: 포즈·다리 구조·소품 개수는 맞음. 그림체는 여전히 레퍼런스와 다름(평평한 채색, 머리 하이라이트·역광 대비 없음)
+
+## Céleste 원화 (새 컨셉 Bleu Minuit) — 2026-10-24
+- 원본: PixAI(사용자 생성, LoRA 사용) 768×1280, 앞머리 없음 → `work/celeste/base_nobangs_768.png`
+- PixAI 프롬프트: 태그형. facing viewer, straight-on, crossed arms on horizontal ledge, horizontal black railing, both eyes visible,
+  half-closed eyes, blue eyes, mole under eye, black hair + blue inner hair, turtleneck, black see-through shirt, black bustier,
+  layered silver chains, large silver star pendant, black corset belt, patent leather, liquid metal buckle, single crescent moon earring,
+  gradient black→blue nails, plain white background (네거티브 칸 없음 → 넣는 태그만으로 밀어줌)
+- 앞머리: PixAI 인페인트 실패 → Higgsfield gpt_image_2_5 (medium, 1k, 0.5크레딧/장) 편집 "add straight blunt bangs… keep everything else identical"
+  2장 중 A(job 545d292a) 채택. 전체를 다시 그리는 편집이라 원본과 픽셀 정렬은 안 맞음(768×1296)
+- 손등 금 편집(job 9358abf6): 반영 안 됨 → 코드 레이어로 그리기로
+- 업스케일: bytedance 4k (2크레딧) → 2435×4096, 위에 흰 여백 18% 덧대 2435×4833 → `work/celeste/base_bangs_4k.png`
