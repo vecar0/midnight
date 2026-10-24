@@ -62,7 +62,7 @@
 | 0번 (시작) | — | 1단계 옷 | 배경만, 거의 빈 무대 |
 | 1번 | I Prélude 서곡 | 2단계 옷 | `oEnvelope`, `swirl`, `shard1~2` |
 | 2번 | II Nocturne 야상곡 | 3단계 옷 | `watch1`, `watch2`, `crystals`, `shard3~5` |
-| 3번 | III Valse 왈츠 | 4단계 옷 직전 연출 | `oWand`, `d3Feather`, `d3Gears`, `d3Pumpkin` |
+| 3번 | III Valse 왈츠 | 3단계 옷 유지 + 요술봉 반짝임 (자정 예고) | `oWand`, `d3Feather`, `d3Gears`, `d3Pumpkin` |
 | 4번 | IV Minuit 자정 | 4단계 드레스 | `d3Tiara`, `d3Slipper`, `d3Key`, `d3Shards`, `d3Watch` + 시계탑 종 |
 
 - 지금은 오브젝트가 처음부터 다 붙어 있다 → **집중을 끝낼 때마다 하나씩 모이는 보상**으로 바꾼다.
