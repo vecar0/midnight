@@ -1,101 +1,73 @@
-# PixAI 프롬프트 — Minuit 캐릭터 Vol. I~IV
+# PixAI 프롬프트 — Minuit 캐릭터 Vol. I~IV (자연어)
 
-## 0. 먼저 할 일 (가장 중요)
+## 1. 모델 · LoRA · 해상도
 
-레퍼런스를 만든 PixAI 게시물을 열어 **사용한 모델 · LoRA · 설정**을 확인한다.
-게시물에 "Remix / 같은 설정으로 생성"이 있으면 그걸로 시작하고, 아래 프롬프트의 **캐릭터·옷·포즈 부분만** 바꿔 넣는다.
-그림체는 프롬프트보다 **모델과 LoRA**에서 훨씬 많이 결정된다.
+| 항목 | 추천 | 이유 |
+|---|---|---|
+| 모델 | **Tsubaki.3** | PixAI 최신 애니 모델(2026-09). 자연어·태그 둘 다 받고, 최대 2048×2048, 결과를 자연어로 고치는 편집이 강화됨 |
+| 대안 | Tsubaki.2 | 자연어 모델(DiT), LoRA 지원. 해상도는 약 1024×1024급 |
+| (참고) 태그식 | Haruka v2 | SDXL, 태그 프롬프트용. SDXL LoRA 생태계 전부 사용 가능 → 레퍼런스가 이걸로 만들어졌다면 이쪽이 그림체 재현에 유리 |
+| 해상도 | **세로 2:3, 긴 변 최대** (Tsubaki.3 기준 약 1344×2016) | 전신 그림을 세로는 무릎 위로 잘라 쓰고 가로는 전신으로 쓰기 때문에 크게 |
+| (Tsubaki.2) | 832×1248 근처 2:3 | |
+| LoRA | 레퍼런스 게시물에 쓰인 LoRA를 그대로. 없으면 PixAI LoRA 목록에서 작가 이름(sushispin 등)으로 검색해 **고른 모델과 호환되는 것만** | LoRA 호환은 모델마다 다름. 강도 0.6~0.8, 2개 이하 |
 
-게시물 정보가 없으면: 단부루 작가 태그를 알아듣는 **Illustrious / NoobAI 계열 애니 모델**을 고른다.
+- **가장 확실한 방법:** 레퍼런스 PixAI 게시물을 열어 모델·LoRA·설정을 확인하고 "같은 설정으로 생성(Remix)"에서 시작.
+- Tsubaki.2는 Steps·CFG·Sampler 설정이 없다(문서 기준). Tsubaki.1·Haruka v2는 설정 가능.
+- 얼굴 유지: Vol. I 결과가 마음에 들면 **그 이미지를 레퍼런스로 넣거나 시드를 고정**하고 옷·포즈 문단만 바꾼다.
 
-## 1. 공통 설정
+## 2. 프롬프트 구조
 
-| 항목 | 값 |
-|---|---|
-| 크기 | 832 × 1216 (세로 2:3) |
-| Steps | 28 |
-| CFG | 5 ~ 6 |
-| Sampler | Euler a (또는 DPM++ 2M Karras) |
-| Hires fix | 1.5배, denoise 0.35 |
-| Seed | 마음에 드는 Vol. I이 나오면 **그 시드를 고정**하고 Vol. II~IV는 옷·포즈 태그만 바꾼다 (얼굴 유지) |
+`[그림체 문단] + [캐릭터 문단] + [Vol.별 문단] + [피할 것 문단]` — 영어 그대로 붙여 넣는다.
 
-가중치는 PixAI 문법 `(태그:1.2)`. NovelAI의 `1.7::태그::`는 PixAI에서 `(태그:1.3)` 정도로 약하게 옮겼다
-(1.4를 넘기면 그림이 깨지기 쉽다).
-
-## 2. 공통 앞부분 (그림체 · 품질) — 모든 Vol.에 그대로
+### 그림체 문단 (모든 Vol. 공통)
 
 ```
-masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest,
-(sushispin:1.3), (kithera:1.15), (yd (orange maru):1.15), channel (caststation), modare, (ratatatat74:0.9), (m m pb:0.6),
-game cg, (jaggy lines:1.2), (thick outlines:1.2), (cel shading:1.15), (detailed shadows:1.25), glossy skin, shiny hair,
-(backlighting:1.15), (rim light:1.15), (high contrast:1.2), dramatic lighting, depth of field, monochrome background,
+A Korean game-CG style anime illustration with a near-monochrome palette of black, white and cool greys, where the only warm color is the pink in her skin. Crisp dark ink line art with slightly jagged hand-drawn edges, a thicker outer contour and very thin inner lines. Her hair is drawn as dozens of separate ultra-thin strands with loose flyaway strands crossing her face, and it is very glossy, with a sharp white highlight band across the top of the head and deep shadows underneath. Hard-edged cel shading with detailed cast shadows, such as hair shadows falling on her face and neck. Porcelain-pale skin with small glossy shine spots and strong pink blush on the cheeks, nose tip and ears, and glossy coral-pink lips slightly parted. Strong backlight and a white rim light around her silhouette, high contrast, cinematic lighting, soft bright haze behind her, shallow depth of field.
 ```
 
-## 3. 캐릭터 고정 부분 — 모든 Vol.에 그대로
+(Tsubaki.3은 태그도 받으므로, 그림체를 더 당기고 싶으면 이 문단 끝에 한 줄 추가:
+`Style tags: sushispin, kithera, yd (orange maru), channel (caststation), modare, game cg, jaggy lines, thick outlines.`)
+
+### 캐릭터 문단 (모든 Vol. 공통)
 
 ```
-solo, 1girl, (grey hair:1.3), silver hair, long hair, straight hair, (blunt bangs:1.2), sidelocks,
-(grey eyes:1.2), (tareme:1.1), half-closed eyes, (red eyeshadow:1.2), eyeliner, long eyelashes,
-pale skin, blush, black choker, expressionless, looking at viewer,
+She is a young woman with long, straight silver-grey hair and blunt, straight-cut bangs with side locks framing her face. She has droopy, half-closed grey eyes with a thick black upper lash line flicked outward, red eyeshadow smudged under her eyes, and a thin black choker. Her expression is cool and a little bored, and she looks straight into the camera.
 ```
-
-## 4. Vol.별 옷 · 포즈 · 배경 — 하나만 골라 붙인다
 
 ### Vol. I — 공부 모드, 꾸안꾸
 
 ```
-(cropped hoodie:1.2), grey hoodie, open hoodie, white tank top, black track pants, wide leg pants, side stripe,
-white sneakers, headphones around neck, (round eyewear:1.1), silver-framed eyewear, hairclip, half updo, chain necklace,
-sitting, stool, knee up, (head rest:1.1), hand on own chin, holding pen, from below, full body,
-simple background, grey background,
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, in study mode. She wears a cropped grey zip-up hoodie, half unzipped over a white ribbed tank top, black wide-leg track pants with a thin white side stripe, chunky white sneakers, big over-ear headphones resting around her neck, thin silver round glasses, silver hair clips and a few thin silver chain necklaces. Her hair is loosely half tied up. She sits on a metal bar stool with her left foot on the footrest so that knee is raised, her left forearm resting across that knee and her hand propping up her chin while loosely holding a single silver pen. Her right leg hangs down toward the floor and her right hand rests on the seat. The camera angle is slightly low, and she is shown in full body from head to shoes against a plain light grey background.
 ```
 
 ### Vol. II — 꾸미기 시작
 
 ```
-(off-shoulder sweater:1.2), cropped sweater, white sweater, (denim skirt:1.1), pleated skirt, miniskirt, leg warmers,
-black leather jacket, jacket on shoulders, chain belt, loafers, hairclip, chain necklace,
-sitting, stool, leaning forward, crossed arms on knee, holding notebook, from below, full body,
-simple background, grey background,
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, starting to dress up. She wears a white off-shoulder cropped knit sweater, a pleated denim mini skirt, slouchy grey leg warmers, loafers, a black leather jacket draped over her shoulders, a silver chain belt and silver hair clips. She sits on a metal bar stool, leaning forward with both forearms crossed on her raised knee, a small notebook held loosely in one hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
 ### Vol. III — 나갈 준비 끝
 
 ```
-(black slip dress:1.2), satin, (see-through sleeves:1.1), mesh top, (oversized bomber jacket:1.1), off shoulder,
-black pantyhose, platform boots, silver earrings, chain necklace,
-sitting, stool, crossed legs, hand in own hair, from below, full body,
-simple background, grey background,
+She is a hip, modern Cinderella in a street fashion magazine photoshoot, ready to go out. She wears a short black satin slip dress over a sheer black mesh long-sleeve top, an oversized black bomber jacket slipping off one shoulder, sheer black tights, chunky black platform boots and small silver earrings. She sits on a metal bar stool with her legs crossed, one hand running through her hair. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
 ### Vol. IV — 완성 룩 (자정)
 
 ```
-(black corset:1.2), strapless, (layered necklace:1.1), silver chain, (leather miniskirt:1.1),
-(clear heels:1.2), transparent footwear, high heels, (shoe dangle:1.2), crystal hair ornament, hairpin,
-sitting, stool, knee up, head rest, hand on own chin, from below, full body,
-simple background, grey background,
+She is a hip, modern Cinderella in a street fashion magazine photoshoot at midnight, in her finished look. She wears a black strapless corset top, layered silver chain necklaces, a black leather mini skirt and a sparkling crystal hairpin instead of a tiara. On her feet are clear transparent high heels, and one heel is slipping off and dangling from her toes, like Cinderella's glass slipper about to fall. She sits on a metal bar stool with one knee raised, her forearm across it and her chin resting on her hand. The camera angle is slightly low, and she is shown in full body against a plain light grey background.
 ```
 
-`shoe dangle` = 발끝에 걸린 구두가 벗겨지려는 모습 (유리구두를 잃어버리는 장면).
-
-## 5. 네거티브 — 모든 Vol.에 그대로
+### 피할 것 문단 (모든 Vol. 공통, 프롬프트 끝에)
 
 ```
-lowres, worst quality, bad quality, low quality, displeasing, very displeasing, jpeg artifacts, blurry, aliasing,
-text, logo, watermark, signature, artist name, username,
-bad anatomy, bad hands, extra digits, fewer digits, extra arms, extra legs, missing fingers, bad feet, mutation, deformed,
-multiple views, chibi, 3d, realistic, photo, sketch, unfinished,
-(blue hair:1.2), (brown hair:1.2), (black hair:1.2), blonde hair, multicolored hair, gradient hair, streaked hair,
-blue eyes, glowing eyes, bright pupils,
-(dress:1.2), gown, wedding dress, frills, maid,
-2girls, multiple girls, male, cleavage, nsfw,
+Avoid: ball gowns, frilly princess dresses, any text, logos or watermarks, extra fingers or limbs, a 3D or photographic look, airbrushed soft rendering, flat webtoon coloring, other hair colors, glowing eyes, and extra people.
 ```
 
-- Vol. III은 슬립 원피스를 입으니 네거티브에서 `(dress:1.2), gown`을 **지운다**.
-- 원래 NovelAI 네거티브의 액세서리 금지(목걸이·귀걸이 등)는 이번 옷과 부딪혀서 뺐다.
+- Vol. III은 슬립 원피스를 입으니 그대로 둬도 된다(피하는 건 무도회 드레스·프릴 드레스뿐).
+- 네거티브 칸이 있는 모델(Haruka v2 등)이면 이 문단 대신 네거티브 칸에 같은 내용을 쓴다.
 
-## 6. 뽑은 뒤
+## 3. 뽑은 뒤
 
 1. 마음에 드는 걸 Claude에게 보낸다 → `illust` 스킬 점검표로 점검
 2. 힉스필드로 배경 제거 · 업스케일 (소량 크레딧)
