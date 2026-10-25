@@ -34,8 +34,8 @@
   #time{justify-self:start;font:400 clamp(54px,17vw,88px)/.95 var(--serif);letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;
     margin-top:6px;background:var(--paper2);padding:4px 10px 2px;box-shadow:6px 6px 0 var(--bleu)}
   #time span{color:var(--bleu)}
-  #moonBox{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px}
-  #moon{width:76px;height:76px;display:block;margin:-6px 0 -4px}
+  #moonBox{position:relative;z-index:-1;display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px}
+  #moon{width:124px;height:124px;display:block;margin:-26px -16px -22px -10px}
   #moonTxt{font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em;color:var(--ink);white-space:nowrap;background:#fff;padding:1px 5px;outline:1px solid var(--ink)}
   #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--paper2);padding:4px 6px 4px 10px;outline:1px solid var(--ink)}
   #subject{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);background:none;font:16px var(--sans);padding:6px 0;
@@ -163,55 +163,44 @@ function moonPath(lit, r = 40){
   const rx = Math.abs(1 - 2*lit)*r, sweep = lit < .5 ? 0 : 1;      // 반달 전엔 그림자 경계가 오른쪽으로, 지나면 왼쪽으로 부푼다
   return `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
 }
-/* 콜라주 달: 밝은 쪽 = 달 사진(흑백), 그림자 쪽 = 클랭 블루 망점 종이.
-   경계는 가로 조각으로 어긋나는 글리치, 작은 궤도와 별이 진행도만큼 돈다. 보름이 되면 흰 스티커 테두리 */
-let moonImg = null, moonLast = '';
-loadImg(PARTS + 'obj_moon.webp').then(i=>{ moonImg = i; moonLast = ''; paint(); });
+/* 콜라주 달: 흑백 달 사진 위에 구겨진 검은 종이를 찢어 덮는다(그림자 쪽).
+   찢긴 경계엔 흰 종이 섬유 + 얇은 그림자. 뒤엔 비켜 놓은 회색 원, 흰 궤도 위 파란 별이 진행도만큼 돈다 */
+let moonImg = null, paperImg = null, moonLast = '';
+Promise.all([loadImg(PARTS + 'obj_moon.webp'), loadImg(PARTS + 'paperBlack.webp')]).then(([m, b])=>{ moonImg = m; paperImg = b; moonLast = ''; paint(); });
+const TEAR = (()=>{ const r = rngOf('tear'), a = []; let v = 0; for(let i = 0; i <= 60; i++){ v = v*.55 + (r() - .5)*2.6; a.push(v); } return a; })();
 function paintMoon(p){
-  const cv = $('moon'), dpr = Math.min(2, devicePixelRatio || 1), S = 76, key = (p*400|0) + '/' + !!moonImg;
+  const cv = $('moon'), dpr = Math.min(3, devicePixelRatio || 1), S = 124, key = (p*500|0) + '/' + !!moonImg;
   if(key === moonLast) return; moonLast = key;
   if(cv.width !== S*dpr){ cv.width = cv.height = S*dpr; }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
-  const c = S/2, r = 25, full = p >= 1;
-  g.save(); g.translate(c, c);
-  // 지금 느낌: 점선 원 + 얇은 바깥 원
-  g.setLineDash([2, 3]); g.strokeStyle = '#121212'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, r + 6, 0, Math.PI*2); g.stroke(); g.setLineDash([]);
-  // 파란 블록 그림자 (시간 글자와 같은 문법)
-  g.fillStyle = '#121212'; g.beginPath(); g.arc(3, 3, r, 0, Math.PI*2); g.fill();
-  // 그림자 쪽: 클랭 블루 + 흰 망점
-  g.fillStyle = B; g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.fill();
-  g.save(); g.clip(); g.fillStyle = '#ffffff66';
-  for(let y = -r; y <= r; y += 4) for(let x = -r + ((y/4) & 1)*2; x <= r; x += 4){ g.beginPath(); g.arc(x, y, .75, 0, Math.PI*2); g.fill(); }
+  const c = S/2, r = 40;
+  g.save(); g.translate(c + 4, c - 2);
+  g.fillStyle = '#8a8a86'; g.beginPath(); g.arc(-11, 9, r, 0, Math.PI*2); g.fill();          // 비켜 놓은 회색 원
+  g.save(); g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.clip();
+  if(moonImg){ g.filter = 'grayscale(1) contrast(1.15)'; g.drawImage(moonImg, -r - 1, -r - 1, 2*r + 2, 2*r + 2); g.filter = 'none'; }
+  else { g.fillStyle = '#bbb'; g.fillRect(-r, -r, 2*r, 2*r); }
+  if(p < 1){
+    // 그림자 쪽 모양: 왼쪽 바깥 반원 + 찢긴 경계(위→아래)
+    const rx = Math.abs(1 - 2*p)*r, dir = p < .5 ? 1 : -1;
+    const shape = dx=>{ g.beginPath(); g.arc(0, 0, r + 4, Math.PI/2, Math.PI*1.5);
+      for(let i = 0; i <= 60; i++){ const f = -Math.PI/2 + i/60*Math.PI, y = Math.sin(f)*(r + 4);
+        g.lineTo(dir*rx*Math.cos(f) + TEAR[i] + dx, y); }
+      g.closePath(); };
+    g.save(); g.shadowColor = '#0007'; g.shadowBlur = 4; g.shadowOffsetX = 1.5; g.shadowOffsetY = 1;
+    shape(2.2); g.fillStyle = '#f4f3ef'; g.fill(); g.restore();                              // 흰 섬유 가장자리
+    shape(0); g.save(); g.clip();
+    if(paperImg) g.drawImage(paperImg, 20, 40, 300, 300, -r - 6, -r - 6, 2*r + 12, 2*r + 12); else { g.fillStyle = '#1b1b1b'; g.fill(); }
+    g.restore();
+  }
   g.restore();
-  // 밝은 쪽: 달 사진을 위상 모양으로 오려서 가로 조각마다 살짝 어긋나게
-  if(p > 0 && moonImg){
-    const o = document.createElement('canvas'); o.width = o.height = Math.ceil(2*r*dpr);
-    const q = o.getContext('2d'); q.setTransform(dpr, 0, 0, dpr, r*dpr, r*dpr);
-    const rx = Math.abs(1 - 2*p)*r;
-    q.beginPath(); q.arc(0, 0, r, -Math.PI/2, Math.PI/2);
-    if(p < .5) q.ellipse(0, 0, Math.max(rx, .01), r, 0, Math.PI/2, -Math.PI/2, true);
-    else q.ellipse(0, 0, Math.max(rx, .01), r, 0, Math.PI/2, Math.PI*1.5, false);
-    q.closePath(); q.clip();
-    q.filter = 'grayscale(1) contrast(1.25) brightness(1.05)'; q.drawImage(moonImg, -r, -r, 2*r, 2*r); q.filter = 'none';
-    const rnd = rngOf('moon' + Math.floor(p*40));
-    for(let y = -r; y < r;){
-      const h = 2 + Math.floor(rnd()*6), dx = full ? 0 : rnd() < .28 ? (rnd() - .5)*7 : 0;
-      g.drawImage(o, 0, (y + r)*dpr, o.width, h*dpr, -r + dx, y, 2*r, h);
-      if(!full && rnd() < .07){ g.fillStyle = rnd() < .5 ? '#fff' : B; g.fillRect(-r + rnd()*r, y, 4 + rnd()*12, 1.5); }
-      y += h;
-    }
-  }
-  if(full){                                            // 보름: 흰 스티커 테두리
-    g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, r + 1.5, 0, Math.PI*2); g.stroke();
-  }
-  // 작은 궤도: 뒤 반은 달 아래로 가려진 것처럼 흐리게, 앞 반은 진하게. 별은 진행도만큼 돈다
-  g.rotate(-.35);
-  g.strokeStyle = B; g.lineWidth = 1;
-  g.beginPath(); g.ellipse(0, 0, r + 11, 7, 0, 0, Math.PI); g.stroke();
-  const a = Math.PI + p*Math.PI*2, sx = Math.cos(a)*(r + 11), sy = Math.sin(a)*7, R5 = full ? 7 : 4.5, k = R5*.13;
-  g.save(); g.translate(sx, sy); g.rotate(.35); g.fillStyle = full ? B : '#121212';
+  // 흰 궤도(앞쪽 반만 달 위로) + 진행도 별
+  g.rotate(-.42); const orx = r + 16, ory = 11;
+  g.strokeStyle = '#fff'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(0, 0, orx, ory, 0, 0, Math.PI); g.stroke();
+  g.strokeStyle = B; g.lineWidth = .8; g.beginPath(); g.ellipse(0, 0, orx, ory, 0, Math.PI, Math.PI*2); g.stroke();
+  const a = Math.PI + p*Math.PI*2, R5 = p >= 1 ? 8 : 5.5, k = R5*.13;
+  g.translate(Math.cos(a)*orx, Math.sin(a)*ory); g.rotate(.42); g.fillStyle = B;
   g.beginPath(); g.moveTo(0, -R5); g.quadraticCurveTo(k, -k, R5, 0); g.quadraticCurveTo(k, k, 0, R5); g.quadraticCurveTo(-k, k, -R5, 0); g.quadraticCurveTo(-k, -k, 0, -R5); g.fill();
-  g.restore(); g.restore();
+  g.restore();
 }
 
 /* ═══ 오늘의 콜라주 (화면 전체) ═══
