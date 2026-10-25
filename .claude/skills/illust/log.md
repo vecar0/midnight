@@ -53,3 +53,6 @@
 - 밑그림(리깅용): 원화(4K→1229×2048) 편집 medium 2k ×2 (2크레딧) "Remove ONLY the long side locks in front of shoulders… and both
   earrings. Paint what was hidden underneath…" → 2번 채택(어깨 뒤 파란 머리 유지) `work/celeste/underlayer_edit.png`.
   편집본은 몸통이 원화보다 약간 크고 아래로 내려가 다시 그려짐 → 얼굴 위(y<1075)는 원화, 아래는 편집본으로 합침 (tools/celeste_layers.py)
+- 오브젝트 추가 24개 (2026-10-25): medium 4k 3:2 transparent, 4×2 시트 3장 (3.75크레딧). 프롬프트는 1차 시트와 같은 문장틀
+  ("A sheet of eight separate black-and-white photographic cut-out objects … loose 4 by 2 grid … real photographs converted to grayscale…")
+  → 천체·시간 / 조각·석고 / 꽃·새·사물. 전부 한 번에 성공, 낱개 분리는 tools/celeste_objects.py SHEETS 표
