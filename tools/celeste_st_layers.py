@@ -248,6 +248,20 @@ def main():
         meta['layers']['underHair'] = {'xy': [int(x0), int(y0)], 'size': [int(x1 - x0), int(y1 - y0)], 'group': 'underHair'}
         first = min(meta['order'].index(n) for n in [n for n, _, _ in STRANDS] + ['earMoon', 'earStar'] if n in meta['order'])
         meta['order'].insert(first, 'underHair')
+        # 귀걸이는 베이스(다발·앞머리 포함)에서 지우고 귀걸이 없는 그림으로 채운 뒤, 귀걸이만 다발 위로 올린다
+        earw = cv2.GaussianBlur(cv2.dilate(earm, np.ones((13, 13), np.uint8)).astype(np.float32), (0, 0), 1)
+        for n in [n for n, _, _ in STRANDS] + ['front_hair', 'restHead', 'face', 'neck', 'topwear']:
+            if n not in meta['layers']:
+                continue
+            Ld = meta['layers'][n]; x0, y0 = Ld['xy']; w, h = Ld['size']
+            im = cv2.imread(str(OUT / f'{n}.webp'), cv2.IMREAD_UNCHANGED).astype(np.float32)
+            k_ = earw[y0:y0 + h, x0:x0 + w][..., None] * (im[..., 3:] > 10)
+            im[..., :3] = im[..., :3] * (1 - k_) + uw[y0:y0 + h, x0:x0 + w] * k_
+            cv2.imwrite(str(OUT / f'{n}.webp'), im.clip(0, 255).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
+        for e in ('earMoon', 'earStar'):
+            meta['order'].remove(e)
+        at = meta['order'].index('front_hair')
+        meta['order'][at:at] = ['earMoon', 'earStar']
         print('밑그림 정렬 점', len(good))
     for name, root, length in STRANDS:
         if name in meta['layers']:
