@@ -98,10 +98,19 @@
   /* 가로: 왼쪽 시간·버튼, 오른쪽 무대 */
   @media (orientation:landscape) and (max-height:600px){
     #app{display:grid;grid-template-columns:minmax(300px,42%) 1fr;grid-template-rows:auto 1fr;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-    #top{grid-column:1;grid-row:1;padding-top:10px}
-    #time{font-size:64px}
+    #top{grid-column:1;grid-row:1;padding:calc(6px + env(safe-area-inset-top)) 12px 0 14px}
+    #brand{margin-bottom:6px;padding:4px 8px} #brand::after{display:none}
+    #time{font-size:46px;margin-top:2px;box-shadow:4px 4px 0 var(--bleu)}
+    #moon{width:84px;height:84px;margin:-14px -8px -12px -6px}
+    #moonTxt{font-size:9px}
+    #pomo{margin-top:6px} #row{margin-top:6px;padding:2px 4px 2px 8px}
+    #presets button{height:28px;min-width:40px;font-size:13px}
+    #subject{font-size:15px;padding:4px 0}
+    #status{margin-bottom:6px;min-height:0}
+    #go,#quit{height:42px}
+    #stats{margin-top:8px;padding-top:6px} #stats b{font-size:16px}
     #stage{grid-column:2;grid-row:1/3}
-    #bottom{grid-column:1;grid-row:2;margin:0 0 10px 12px;padding-top:28px;align-self:end;border:1px solid var(--ink)}
+    #bottom{grid-column:1;grid-row:2;margin:0 0 calc(8px + env(safe-area-inset-bottom)) 14px;padding:26px 12px 10px;align-self:end;border:1px solid var(--ink)}
     #recent{display:none}
   }
   /* ── 달력 ── */
@@ -408,7 +417,8 @@ async function buildCollage(){
     if(i < 3) b2 += s; else if(!nearFace(x, y, 30)) f1 += s; }
   // 8) 타자기 글귀 상자 + 곡선 글귀
   Object.assign($('stageLbl').style, side === 'L' ? {left:'auto', right:'12px'} : {left:'12px', right:'auto'});   // 이름표는 글귀 반대쪽
-  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.31, .34), lh = 12;
+  const topB = land ? 0 : $('top').getBoundingClientRect().bottom - ab.top;      // 위쪽 글자판 아래부터
+  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = Math.max(H*rr(.31, .34), topB + 14), lh = 12;
     f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
     f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="9.5" fill="${K}">` +
       L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
@@ -702,19 +712,30 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode 
 
 /* ═══ 무대 맞추기 ═══ */
 // 아이폰 홈 화면 앱은 innerHeight를 짧게 주는 경우가 있어 화면 높이를 쓴다
-function appH(){ const sa = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
-  return sa && Math.abs(screen.width - innerWidth) < 2 ? screen.height : innerHeight; }
+function appH(){
+  const sa = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if(!appH.p){ appH.p = document.createElement('div'); appH.p.style.cssText = 'position:fixed;top:0;width:0;height:100vh;height:100lvh;visibility:hidden'; document.body.appendChild(appH.p); }
+  const probe = appH.p;
+  let h = Math.max(innerHeight, document.documentElement.clientHeight, probe.offsetHeight || 0);
+  if(sa && Math.abs(screen.width - innerWidth) < 2) h = Math.max(h, screen.height);      // 세로 홈 화면 앱
+  if(sa && Math.abs(screen.height - innerWidth) < 2) h = Math.max(h, screen.width);      // 가로 홈 화면 앱
+  return h;
+}
 function fit(){
   $('app').style.height = appH() + 'px';
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
-  const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? 1 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
+  const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? .9 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
   const fw = IW*sc, fh = IH*sc, top = H + (land ? 0 : 10) - VIEW_Y1*sc;    // 난간 아래(VIEW_Y1)를 무대 바닥에 맞춘다
   Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
   FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};   // 화면(앱) 좌표의 원화 위치
   clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
 }
-addEventListener('resize', fit);
+addEventListener('resize', fit); addEventListener('orientationchange', ()=>setTimeout(fit, 300)); addEventListener('pageshow', fit);
+setTimeout(fit, 400); setTimeout(fit, 1500);      // iOS는 처음 높이를 늦게 알려 준다
+
+/* ═══ 오프라인: 한 번 열면 그림·코드가 기기에 저장된다 ═══ */
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ═══ 시작 ═══ */
 let rig = null, shown = 0;
