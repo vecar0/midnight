@@ -45,7 +45,7 @@ window.CelesteRig = async function(cv, opt = {}){
   const VS = `attribute vec2 p, uv, ip; varying vec2 v, w; uniform vec2 res;
     void main(){ v = uv; w = ip; gl_Position = vec4(p.x/res.x*2.-1., 1.-p.y/res.y*2., 0., 1.); }`;
   const FS = `precision mediump float; varying vec2 v, w;     // v: 레이어 그림 좌표, w: 원화 좌표(쉬는 자세)
-    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha, plaster, crackOn; uniform vec2 ires; uniform vec3 stage;
+    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha, plaster, crackOn, plasterOn; uniform vec2 ires; uniform vec3 stage;
     // 석고: 몸에 붙은 좌표(w)로 만든 무늬라 리깅을 따라 움직인다
     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)))*43758.5453); }
     float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
@@ -54,18 +54,17 @@ window.CelesteRig = async function(cv, opt = {}){
     float crackLine(vec2 p, vec2 o, float ang, float len, float sd, float wd){   // 원화 픽셀 좌표의 구불구불한 금 한 줄
       vec2 d = vec2(cos(ang), sin(ang)), r = p - o; float t = dot(r, d), sv = dot(r, vec2(-d.y, d.x));
       if(t < 0. || t > len) return 0.;
-      float off = (vnoise(vec2(t*.045, sd)) - .5)*16. + (vnoise(vec2(t*.2, sd + 3.)) - .5)*4.;
+      float off = (vnoise(vec2(t*.03, sd)) - .5)*9. + (vnoise(vec2(t*.13, sd + 3.)) - .5)*2.2;   // 크게 한 번 휘고 잔떨림은 조금
       float hw = mix(wd, .6, t/len)*.5;                  // 끝으로 갈수록 가늘게
       return 1. - smoothstep(hw, hw + .9, abs(sv - off)); }
-    float cracks(vec2 p){                                 // 얼굴(오른뺨·이마)과 두 손등
-      float k = crackLine(p, vec2(708., 930.), 1.3, 150., 1., 4.2);
-      k = max(k, crackLine(p, vec2(722., 990.), 2.3, 55., 2., 2.4));
-      k = max(k, crackLine(p, vec2(718., 962.), .5, 45., 3., 2.2));
-      k = max(k, crackLine(p, vec2(655., 690.), 1.05, 85., 4., 3.2));
-      k = max(k, crackLine(p, vec2(905., 1742.), .22, 125., 5., 4.4));       // 오른손등
-      k = max(k, crackLine(p, vec2(965., 1756.), 1.15, 42., 6., 2.4));
-      k = max(k, crackLine(p, vec2(140., 1716.), .16, 115., 7., 4.2));       // 왼손등
-      k = max(k, crackLine(p, vec2(190., 1724.), .95, 45., 8., 2.2));
+    float cracks(vec2 p){                                 // 눈 밑에서 뺨으로 흐르는 눈물 같은 금 + 두 손등(손가락 방향)
+      float k = crackLine(p, vec2(724., 878.), 1.55, 140., 1., 4.);
+      k = max(k, crackLine(p, vec2(722., 940.), 2.2, 36., 2., 2.2));
+      k = max(k, crackLine(p, vec2(722., 980.), 1.05, 30., 3., 1.8));
+      k = max(k, crackLine(p, vec2(910., 1736.), .38, 120., 5., 3.8));       // 오른손등
+      k = max(k, crackLine(p, vec2(975., 1762.), -.15, 34., 6., 2.));
+      k = max(k, crackLine(p, vec2(292., 1702.), 2.86, 110., 7., 3.6));      // 왼손등
+      k = max(k, crackLine(p, vec2(235., 1716.), 2.3, 30., 8., 1.8));
       return k; }
     void main(){
       vec4 c = texture2D(img, v) * alpha;
@@ -81,7 +80,8 @@ window.CelesteRig = async function(cv, opt = {}){
       vec3 col = mix(u, vec3(l*1.05), g);
       if(plaster < 1.){
         // 석고 → 색: 진행할수록 고르게 색이 돌아온다. 얼굴·손의 파란 금은 끝무렵에 아물어 사라진다
-        float pl = 1. - smoothstep(0., .92, plaster);
+        float sat = max(max(u.r, u.g), u.b) - min(min(u.r, u.g), u.b);
+        float pl = (1. - smoothstep(0., .92, plaster)) * (plasterOn > 1.5 ? max(smoothstep(.5, .72, l)*(1. - smoothstep(.08, .2, sat)), m.r) : plasterOn);   // 옷·장신구는 제 색
         vec3 P = mix(vec3(.42, .42, .41), vec3(.975, .968, .952), pow(l, .6));
         col = mix(col, P, pl);
         if(crackOn > 0.) col = mix(col, vec3(.118, .133, .84), cracks(w*ires)*(1. - smoothstep(.6, .97, plaster)));
@@ -89,6 +89,8 @@ window.CelesteRig = async function(cv, opt = {}){
       gl_FragColor = vec4(col*c.a, c.a);
     }`;
   let U, M = {}, T = {}, ORDER = [];
+  // 석고가 덮이는 층: 1 = 전부(얼굴·머리카락·귀), 2 = 밝은 피부만(목·손 — 옷 부분은 제 색). 나머지(옷·장신구·난간)는 제 색
+  const PLASTER = {face:1, restHead:1, 'ears-l':1, 'ears-r':1, eyes_closed:1, mouth_smile:1, face_frown:1, neck:2, 'handwear-r':2};
   function program(){
     const sh = (t,s)=>{ const o = gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o);
       if(!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
@@ -264,7 +266,7 @@ window.CelesteRig = async function(cv, opt = {}){
       else if(g === 'iris') headRigid(m, S.gaze.x, S.gaze.y);
       else if(g === 'patch'){ headRigid(m); a = name === 'eyes_closed' ? closed : name === 'mouth_smile' ? S.smile : S.frown; if(a <= .001) continue; }
       else headRigid(m);                                                                      // 얼굴·이목구비·귀·머리 조각: 통째로
-      gl.uniform1f(U.alpha, a); gl.uniform1f(U.crackOn, name === 'face' || name === 'handwear-r' ? 1 : 0);
+      gl.uniform1f(U.alpha, a); gl.uniform1f(U.crackOn, name === 'face' || name === 'handwear-r' ? 1 : 0); gl.uniform1f(U.plasterOn, PLASTER[name] ?? (g === 'hairBack' || g === 'underHair' || g === 'strand' || g === 'hairFront' || g === 'feature' || g === 'eyewhite' || g === 'iris' ? 1 : 0));
       if(g === 'iris'){ const ew = RIG.layers[name.replace('irides', 'eyewhite')];
         gl.uniform1f(U.isIris, 1); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, T[name.replace('irides', 'eyewhite')]);
         gl.uniform4f(U.clipR, ew.xy[0]/IW, ew.xy[1]/IH, ew.size[0]/IW, ew.size[1]/IH); gl.uniform2f(U.gaze, S.gaze.x/IW, S.gaze.y/IH);
@@ -296,7 +298,7 @@ window.CelesteRig = async function(cv, opt = {}){
     const prog = program(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     U = {p:gl.getAttribLocation(prog,'p'), uv:gl.getAttribLocation(prog,'uv'), ip:gl.getAttribLocation(prog,'ip')};
     [U.p, U.uv, U.ip].forEach(a=>gl.enableVertexAttribArray(a));
-    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage','plaster','crackOn','ires']) U[n] = gl.getUniformLocation(prog,n);
+    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage','plaster','crackOn','ires','plasterOn']) U[n] = gl.getUniformLocation(prog,n);
     for(const n of ORDER) T[n] = tex(imgs[n], 0);
     tex(imgs.mask, 1); gl.uniform1i(U.img, 0); gl.uniform1i(U.msk, 1); gl.uniform1i(U.clipT, 2); gl.uniform2f(U.res, IW, IH); gl.uniform2f(U.ires, IW, IH);
     for(const n of ORDER){

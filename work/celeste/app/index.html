@@ -42,8 +42,15 @@
     color:var(--ink);border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
   #subject::placeholder{color:var(--grey)}
   #presets{display:flex;gap:4px}
-  #presets button{width:38px;height:32px;border:1px solid var(--ink);background:#fff;font:15px var(--serif);display:grid;place-items:center}
+  #presets button{min-width:46px;padding:0 5px;height:32px;border:1px solid var(--ink);background:#fff;font:15px var(--serif);display:flex;align-items:baseline;justify-content:center;white-space:nowrap}
   #presets button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+  #presets small{font-size:10px;opacity:.7}
+  #pomo{grid-column:1/3;display:flex;align-items:center;gap:5px;margin-top:10px;font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em}
+  #pomo i{width:9px;height:9px;border:1.3px solid var(--ink);border-radius:50%;background:var(--paper2)}
+  #pomo i.on{background:var(--bleu);border-color:var(--bleu)}
+  #pomo i.now{background:linear-gradient(90deg,var(--bleu) 50%,var(--paper2) 50%)}
+  #pomo span{margin-left:4px;background:var(--paper2);padding:1px 5px}
+  #time.rest{color:#666} #time.rest span{color:#666}
   #recent{grid-column:1/3;display:flex;gap:6px;overflow:hidden;height:22px;margin-top:4px}
   #recent button{font-size:11px;color:var(--ink);background:var(--paper2);border:1px solid var(--line);padding:2px 8px;white-space:nowrap}
 
@@ -148,6 +155,7 @@
     <div id="brand"><button id="date" type="button"></button><b>BLEU <i>MINUIT</i></b></div>
     <div id="time">25<span>:</span>00</div>
     <div id="moonBox"><canvas id="moon"></canvas><div id="moonTxt"></div></div>
+    <div id="pomo"></div>
     <div id="row">
       <input id="subject" placeholder="무엇에 집중할까요" maxlength="20" enterkeyhint="done" autocomplete="off">
       <div id="presets"></div>
@@ -172,7 +180,7 @@
     <div id="btns"><button id="go">집중 시작</button><button id="quit" hidden>그만두기</button></div>
     <div id="stats">
       <div><b id="sTime">0분</b><span>오늘</span></div>
-      <div><b id="sCnt">0</b><span>완주</span></div>
+      <div><b id="sCnt">0</b><span>포모도로</span></div>
       <div><b id="sBest">0분</b><span>최장</span></div>
     </div>
   </footer>
@@ -562,54 +570,91 @@ function tone(freqs, dur, type = 'sine', vol = .12){
   }catch(e){}
 }
 
-/* ═══ 타이머 ═══ */
-let mins = 25, total = 1500, remain = 1500, endAt = 0, mode = 'idle', tid = null, wake = null;
+/* ═══ 타이머: 포모도로 ═══
+   집중 → 짧은 휴식 → … 4번째 집중이 끝나면 긴 휴식. 셀레스트의 색은 한 세트(집중 4번)에 걸쳐 돌아온다.
+   휴식은 집중이 끝나면 저절로 시작, 휴식이 끝나면 다음 집중은 눌러서 시작 */
+const POMO = [[25, 5, 15], [50, 10, 20], [15, 3, 10]], ROUNDS = 4;
+let pomo = 0, phase = 'focus', rounds = 0;          // rounds = 이번 세트에서 끝낸 집중 수
+let total = 1500, remain = 1500, endAt = 0, mode = 'idle', tid = null, wake = null;
+try{ pomo = clamp(+localStorage.getItem('bleu.pomo') || 0, 0, POMO.length - 1); }catch(e){}
+const mins = () => POMO[pomo][0];
 const STAGES = [[0,'plâtre · 석고'],[.25,'craquelure · 금'],[.5,'aube · 새벽빛'],[.75,'bleu · 푸름'],[1,'minuit · 자정']];
-function progress(){ return mode === 'idle' ? 0 : total ? (total - remain)/total : 0; }
+function progress(){
+  if(mode === 'finished') return 1;
+  if(mode === 'idle') return 0;
+  const f = phase === 'focus' && (mode === 'run' || mode === 'paused') ? (total - remain)/total : 0;
+  return Math.min(1, (rounds + f)/ROUNDS);
+}
 function paint(){
   const m = Math.floor(remain/60), s = remain % 60;
   $('time').innerHTML = String(m).padStart(2,'0') + '<span>:</span>' + String(s).padStart(2,'0');
-  const p = mode === 'finished' ? 1 : progress();
+  $('time').classList.toggle('rest', phase !== 'focus' && mode !== 'idle');
+  const p = progress();
   paintMoon(p);
   $('haloB').innerHTML = haloSvg(false, p); $('haloF').innerHTML = haloSvg(true, p);
   $('stageName').textContent = STAGES.filter(x=>p >= x[0]).pop()[1];
-  $('quit').hidden = !(mode === 'run' || mode === 'paused');
+  $('quit').hidden = mode === 'idle' || mode === 'finished' && phase === 'focus';
+  // 세트 표시: ●●○○ + 지금 단계
+  const dots = Array.from({length:ROUNDS}, (_, i)=>'<i class="' + (i < rounds ? 'on' : i === rounds && phase === 'focus' && mode !== 'idle' ? 'now' : '') + '"></i>').join('');
+  const lbl = mode === 'idle' ? 'POMODORO · 집중 ' + POMO[pomo][0] + ' / 휴식 ' + POMO[pomo][1]
+    : phase === 'focus' ? 'FOCUS ' + Math.min(rounds + 1, ROUNDS) + '/' + ROUNDS : phase === 'long' ? 'LONGUE PAUSE · 긴 휴식' : 'PAUSE · 휴식';
+  $('pomo').innerHTML = dots + '<span>' + lbl + '</span>';
 }
 async function keepAwake(on){ try{ if(on && 'wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); else if(wake){ await wake.release(); wake = null; } }catch(e){} }
 function setStatus(t){ $('status').textContent = t; }
 function toast(t, ms = 2400){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('on'), ms); }
-function setMins(v){ mins = v; total = v*60; remain = total;
-  document.querySelectorAll('#presets button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.m === v))); paint(); }
+function setPomo(i){ pomo = i; try{ localStorage.setItem('bleu.pomo', i); }catch(e){}
+  phase = 'focus'; total = remain = mins()*60;
+  document.querySelectorAll('#presets button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.i === i))); paint(); }
+function setGo(t, run){ $('go').textContent = t; $('go').classList.toggle('run', !!run); }
+function runPhase(ph){                                   // 한 단계(집중/휴식/긴 휴식) 시작
+  phase = ph; total = remain = POMO[pomo][ph === 'focus' ? 0 : ph === 'break' ? 1 : 2]*60;
+  mode = 'run'; endAt = Date.now() + remain*1000;
+  clearInterval(tid); tid = setInterval(tickOnce, 1000); keepAwake(true);
+  if(ph === 'focus'){ cur = {s:subjOf(), t:Date.now(), sec:0, mins:mins()}; $('subject').disabled = true; if(rig) rig.expr = '';
+    setGo('잠시 멈춤', true); setStatus(cur.s + ' · 집중 ' + (rounds + 1) + '/' + ROUNDS); }
+  else { setGo('휴식 건너뛰기', false); setStatus(ph === 'long' ? '한 세트 끝 · 길게 쉬어요' : '잠깐 쉬어요 · 셀레스트도 숨을 고르는 중'); }
+  paint();
+}
 function tickOnce(){
   const was = remain; remain = Math.max(0, Math.round((endAt - Date.now())/1000));
-  const add = Math.max(0, was - remain); rec.todaySec += add; if(cur) cur.sec += add;
-  if(rec.todaySec % 15 < add) saveRec();
-  paint(); paintStats(); if(remain <= 0) finish();
+  const add = Math.max(0, was - remain);
+  if(phase === 'focus'){ rec.todaySec += add; if(cur) cur.sec += add; if(rec.todaySec % 15 < add) saveRec(); }
+  paint(); paintStats(); if(remain <= 0) phaseEnd();
 }
-function start(){
-  if(mode === 'run'){ pause(); return; }
-  if(mode !== 'paused') remain = total;
-  if(!cur) cur = {s:subjOf(), t:Date.now(), sec:0, mins};
-  if(rig) rig.expr = '';
-  mode = 'run'; endAt = Date.now() + remain*1000; $('subject').disabled = true;
-  $('go').textContent = '잠시 멈춤'; $('go').classList.add('run'); setStatus(cur.s + ' · ' + mins + '분');
-  keepAwake(true); clearInterval(tid); tid = setInterval(tickOnce, 1000); paint();
+function phaseEnd(){
+  clearInterval(tid);
+  if(phase === 'focus'){
+    rounds++; rec.done++; rec.best = Math.max(rec.best, mins()); commit(true); $('subject').disabled = false;
+    if(rounds >= ROUNDS){                                // 세트 완주: 색을 다 되찾고 긴 휴식
+      tone([523.25, 659.25, 783.99, 1046.5], 1.4); if(rig) rig.expr = 'smile'; doves(); toast('Bleu Minuit', 3000);
+      runPhase('long'); mode = 'run'; return;
+    }
+    tone([659.25, 783.99], .9); runPhase('break'); return;
+  }
+  // 휴식 끝
+  tone([783.99, 659.25], .9, 'sine', .1); keepAwake(false);
+  if(phase === 'long'){ rounds = 0; mode = 'finished'; phase = 'focus'; total = remain = mins()*60;
+    setGo('새 세트 시작'); setStatus('세트를 마쳤어요 · 셀레스트는 그대로 깨어 있어요'); paint(); paintStats(); return; }
+  mode = 'wait'; phase = 'focus'; total = remain = mins()*60;
+  setGo('다음 집중 ' + (rounds + 1) + '/' + ROUNDS); setStatus('휴식 끝 · 준비되면 눌러요'); paint();
+}
+function start(){                                        // 큰 버튼
+  if(mode === 'run' && phase === 'focus'){ pause(); return; }
+  if(mode === 'run'){ remain = 0; phaseEnd(); return; }   // 휴식 건너뛰기
+  if(mode === 'paused'){ mode = 'run'; endAt = Date.now() + remain*1000; clearInterval(tid); tid = setInterval(tickOnce, 1000); keepAwake(true);
+    setGo('잠시 멈춤', true); setStatus(cur.s + ' · 집중 ' + (rounds + 1) + '/' + ROUNDS); paint(); return; }
+  if(mode === 'idle' || mode === 'finished'){ rounds = 0; if(rig) rig.expr = ''; }
+  runPhase('focus');
 }
 function pause(){ mode = 'paused'; clearInterval(tid); keepAwake(false); saveRec();
-  $('go').textContent = '이어서 집중'; $('go').classList.remove('run'); setStatus('석고가 숨을 고르는 중'); paint(); }
-function finish(){ clearInterval(tid); keepAwake(false);
-  remain = 0; mode = 'finished'; rec.done++; rec.best = Math.max(rec.best, mins); commit(true); $('subject').disabled = false;
-  tone([523.25, 659.25, 783.99, 1046.5], 1.4);
-  if(rig){ rig.expr = 'smile'; }
-  doves();
-  setStatus(mins + '분 완주 · 셀레스트가 색을 되찾았어요');
-  $('go').textContent = '다시 시작'; $('go').classList.remove('run'); toast('Bleu Minuit', 3000); paint(); paintStats(); }
-function giveUp(){ const spent = Math.floor((total - remain)/60);
-  clearInterval(tid); keepAwake(false); saveRec(); commit(false); $('subject').disabled = false; mode = 'idle'; remain = total;
-  $('go').textContent = '집중 시작'; $('go').classList.remove('run');
-  if(rig){ rig.expr = 'frown'; setTimeout(()=>{ if(mode === 'idle' && rig.expr === 'frown') rig.expr = ''; }, 4500); }
+  setGo('이어서 집중'); setStatus('석고가 숨을 고르는 중'); paint(); }
+function giveUp(){ const spent = phase === 'focus' && cur ? Math.floor(cur.sec/60) : 0, was = rounds;
+  clearInterval(tid); keepAwake(false); saveRec(); if(phase === 'focus') commit(false); $('subject').disabled = false;
+  mode = 'idle'; phase = 'focus'; rounds = 0; total = remain = mins()*60; setGo('집중 시작');
+  if(rig && (spent >= 1 || was)){ rig.expr = 'frown'; setTimeout(()=>{ if(mode === 'idle' && rig.expr === 'frown') rig.expr = ''; }, 4500); }
   tone([392, 277.18], 1.6, 'triangle', .08);
-  setStatus(spent >= 1 ? spent + '분은 기록에 남았어요' : '시간을 고르고 시작하세요'); paint(); }
+  setStatus(spent >= 1 || was ? '세트를 멈췄어요 · 집중한 시간은 기록에 남았어요' : '시간을 고르고 시작하세요'); paint(); }
 function doves(){
   const box = $('doves'); box.innerHTML = '';
   for(let i = 0; i < 7; i++){ const im = new Image(); im.src = PARTS + 'obj_dove.webp';
@@ -620,19 +665,17 @@ function doves(){
 }
 
 /* ═══ UI ═══ */
-$('presets').innerHTML = [10,25,40,60].map(v=>'<button data-m="'+v+'" aria-pressed="'+(v === 25)+'">'+v+'</button>').join('');
+$('presets').innerHTML = POMO.map((v, i)=>'<button data-i="'+i+'" aria-pressed="'+(i === pomo)+'">'+v[0]+'<small>/'+v[1]+'</small></button>').join('');
 $('presets').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
-  if(mode === 'run'){ toast('집중 중엔 바꿀 수 없어요', 1700); return; }
-  if(mode === 'paused'){ commit(false); }
-  if(mode !== 'idle'){ mode = 'idle'; $('go').textContent = '집중 시작'; setStatus('시간을 고르고 시작하세요'); if(rig) rig.expr = ''; }
-  setMins(+b.dataset.m); };
+  if(mode !== 'idle' && mode !== 'finished'){ toast('세트 중엔 바꿀 수 없어요', 1700); return; }
+  setPomo(+b.dataset.i); };
 $('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; if(b.dataset.cal){ openCal(); return; }
   if(b.dataset.i != null){ toggleItem(keyOf(), +b.dataset.i); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
 $('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
 $('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
 try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}
 $('subject').addEventListener('change', ()=>{ try{ localStorage.setItem('midnight.subj', $('subject').value.trim()); }catch(e){} });
-$('go').onclick = ()=>{ if(mode === 'finished'){ mode = 'idle'; } start(); };
+$('go').onclick = start;
 $('quit').onclick = giveUp;
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode === 'run') tickOnce(); });
 
@@ -659,7 +702,7 @@ addEventListener('resize', fit);
 /* ═══ 시작 ═══ */
 let rig = null, shown = 0;
 (async ()=>{
-  fit(); paint(); paintStats();
+  fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
   rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
   $('loading').remove();
