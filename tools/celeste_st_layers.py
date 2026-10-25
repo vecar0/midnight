@@ -133,7 +133,7 @@ def main():
             if st_[ci, 4] < 1500:
                 continue
             C = hl == ci
-            K = 1 if st_[ci, 4] < 20000 else (4 if st_[ci, 2] > 380 else 3)
+            K = 1                                           # 잘라준 덩어리를 그대로 한 다발로
             rows = np.where(C.any(axis=1))[0]
             Lx = np.full(H, np.nan); Rx = np.full(H, np.nan)
             for y in rows:
@@ -143,7 +143,12 @@ def main():
                 v = np.interp(np.arange(H), np.where(ok)[0], arr[ok])
                 arr[:] = np.convolve(np.pad(v, 30, mode='edge'), np.ones(61) / 61, 'valid')
             u = (np.arange(W)[None, :] - Lx[:, None]) / np.maximum(Rx - Lx, 8)[:, None]
-            Cs = cv2.GaussianBlur(C.astype(np.float32), (0, 0), 1.0)
+            # 경계 정리: 낮은 해상도에서 구한 자리라 가장자리 몇 픽셀은 원화의 머리/피부 구분으로 다듬는다
+            inner = cv2.erode(C.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+            outer = cv2.dilate(C.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+            darkish = (gray < 120) | ((np.abs(hsv[..., 0].astype(int) - 118) < 22) & (hsv[..., 1] > 50))
+            C = inner | (outer & darkish)
+            Cs = cv2.GaussianBlur(C.astype(np.float32), (0, 0), .8)
             for k in range(K):
                 lo, hi = k / K, (k + 1) / K
                 wk = np.ones_like(u) if K == 1 else (sm_np(lo - .05, lo + .05, u) if k > 0 else 1) * (1 - sm_np(hi - .05, hi + .05, u) if k < K - 1 else 1)
@@ -158,11 +163,6 @@ def main():
         # 다발 자리에서 머리(앞머리) 레이어는 빼고, 뒤에는 어두운 머리색 받침을 깐다
         hsoft = cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 1.5)
         L['front_hair'][1] = L['front_hair'][1] * (1 - hsoft)
-        back = cv2.dilate(hole, np.ones((31, 31), np.uint8)).astype(np.float32)
-        bh = L['back_hair']
-        fill = cv2.GaussianBlur(orig * hole[..., None], (0, 0), 25) / np.maximum(cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 25), 1e-3)[..., None]
-        need = back * (bh[1] < .6) * (yy < RAIL_Y) * (oa > .3)
-        bh[0] = np.where(need[..., None] > 0, fill * .55, bh[0]); bh[1] = np.maximum(bh[1], need * .98)
         at = order.index('front_hair')
         for name, _, _ in STRANDS:
             order.insert(at, name); at += 1
@@ -224,6 +224,30 @@ def main():
         meta['order'].append(n)
         meta['layers'][n] = {'xy': [int(x0), int(y0)], 'size': [int(x1 - x0), int(y1 - y0)], 'group': GROUP.get(n, 'body')}
         rest_check = rest_check * (1 - a[..., None]) + rgb * a[..., None]
+    # 다발 밑: Higgsfield로 옆머리·귀걸이를 지운 편집본(underlayer_edit.png)을 다발 자리 주변에서 원화에 맞춰 깐다
+    if STRANDS:
+        ed = cv2.imread(str(ROOT / 'work/celeste/underlayer_edit.png'))
+        src_w = (orig * oa[..., None] + 255 * (1 - oa[..., None])).astype(np.uint8)
+        ring = (cv2.dilate(hole, np.ones((121, 121), np.uint8)) > 0) & ~(cv2.dilate(hole, np.ones((15, 15), np.uint8)) > 0) & (oa > .5)
+        g1, g2 = cv2.cvtColor(src_w, cv2.COLOR_BGR2GRAY), cv2.cvtColor(ed, cv2.COLOR_BGR2GRAY)
+        sift = cv2.SIFT_create(8000)
+        k1, d1 = sift.detectAndCompute(g1, ring.astype(np.uint8) * 255); k2, d2 = sift.detectAndCompute(g2, None)
+        good = [m for m, n in cv2.BFMatcher().knnMatch(d2, d1, k=2) if m.distance < .7 * n.distance]
+        Mu, _ = cv2.estimateAffinePartial2D(np.float32([k2[m.queryIdx].pt for m in good]), np.float32([k1[m.trainIdx].pt for m in good]), ransacReprojThreshold=2)
+        uw = cv2.warpAffine(ed, Mu, (W, H), flags=cv2.INTER_CUBIC, borderValue=(255, 255, 255)).astype(np.float32)
+        for c in range(3):                                       # 색을 원화에 맞춘다
+            k_, b_ = np.polyfit(uw[..., c][ring], orig[..., c][ring], 1)
+            uw[..., c] = np.clip(uw[..., c] * k_ + b_, 0, 255)
+        ua_ = (uw.min(axis=2) < 238).astype(np.float32)          # 편집본의 흰 배경은 뺀다
+        ua_ = cv2.GaussianBlur(cv2.morphologyEx(ua_, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)), (0, 0), 1)
+        reg = cv2.GaussianBlur(cv2.dilate(hole, np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
+        ar = (reg * ua_ * (yy < RAIL_Y)).astype(np.float32)
+        ys_, xs_ = np.where(ar > .01); x0, x1, y0, y1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
+        cv2.imwrite(str(OUT / 'underHair.webp'), np.dstack([uw[y0:y1, x0:x1], ar[y0:y1, x0:x1] * 255]).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
+        meta['layers']['underHair'] = {'xy': [int(x0), int(y0)], 'size': [int(x1 - x0), int(y1 - y0)], 'group': 'underHair'}
+        first = min(meta['order'].index(n) for n, _, _ in STRANDS if n in meta['order'])
+        meta['order'].insert(first, 'underHair')
+        print('밑그림 정렬 점', len(good))
     for name, root, length in STRANDS:
         if name in meta['layers']:
             meta['layers'][name]['root'] = root; meta['layers'][name]['len'] = length

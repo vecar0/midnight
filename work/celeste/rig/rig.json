@@ -26,14 +26,10 @@
   "irides-r",
   "irides-l",
   "eyelash-l",
+  "underHair",
   "strand00",
   "strand01",
   "strand02",
-  "strand03",
-  "strand04",
-  "strand05",
-  "strand06",
-  "strand07",
   "front_hair"
  ],
  "layers": {
@@ -76,7 +72,7 @@
     952
    ],
    "size": [
-    206,
+    205,
     235
    ],
    "group": "body"
@@ -282,130 +278,50 @@
   "strand00": {
    "xy": [
     8,
-    1377
+    1375
    ],
    "size": [
-    135,
-    285
+    137,
+    289
    ],
    "group": "strand",
    "root": [
-    127,
-    1379
+    128,
+    1377
    ],
-   "len": 280
+   "len": 284
   },
   "strand01": {
    "xy": [
-    152,
-    598
+    150,
+    596
    ],
    "size": [
-    228,
-    911
+    433,
+    933
    ],
    "group": "strand",
    "root": [
-    308,
-    600
+    336,
+    598
    ],
-   "len": 906
+   "len": 928
   },
   "strand02": {
    "xy": [
-    227,
-    598
+    730,
+    531
    ],
    "size": [
-    201,
-    871
-   ],
-   "group": "strand",
-   "root": [
-    325,
-    599
-   ],
-   "len": 860
-  },
-  "strand03": {
-   "xy": [
-    321,
-    599
-   ],
-   "size": [
-    187,
-    925
-   ],
-   "group": "strand",
-   "root": [
-    337,
-    601
-   ],
-   "len": 918
-  },
-  "strand04": {
-   "xy": [
-    329,
-    601
-   ],
-   "size": [
-    252,
-    926
-   ],
-   "group": "strand",
-   "root": [
-    352,
-    603
-   ],
-   "len": 921
-  },
-  "strand05": {
-   "xy": [
-    731,
-    533
-   ],
-   "size": [
-    142,
-    987
-   ],
-   "group": "strand",
-   "root": [
-    757,
-    535
-   ],
-   "len": 982
-  },
-  "strand06": {
-   "xy": [
-    753,
-    534
-   ],
-   "size": [
-    191,
-    981
+    319,
+    990
    ],
    "group": "strand",
    "root": [
     765,
-    538
+    533
    ],
-   "len": 974
-  },
-  "strand07": {
-   "xy": [
-    757,
-    539
-   ],
-   "size": [
-    290,
-    977
-   ],
-   "group": "strand",
-   "root": [
-    774,
-    545
-   ],
-   "len": 969
+   "len": 986
   },
   "front_hair": {
    "xy": [
@@ -417,6 +333,17 @@
     1108
    ],
    "group": "hairFront"
+  },
+  "underHair": {
+   "xy": [
+    0,
+    526
+   ],
+   "size": [
+    1054,
+    1143
+   ],
+   "group": "underHair"
   }
  }
 }
