@@ -90,6 +90,20 @@ def import_pdf(path, name):
             x0 = round(r.x0 / pw * W); y0 = round(r.y0 / ph * CH)
             w = round(r.width / pw * W); h = round(r.height / ph * CH)
             c.alpha_composite(im.resize((w, h), Image.LANCZOS) if (w, h) != im.size else im, (x0, y0))
+    a = np.array(c)
+    if a[..., 3].min() == 255:
+        # 프로크리에이트 PDF는 레이어를 흰 바탕에 합친 JPEG로 저장한다 → 지운 자리를 찾는 틀로만 쓰고 색은 지금 레이어 것을 쓴다
+        import cv2
+        rgb = a[..., :3].astype(np.int16)
+        light = ((rgb.min(axis=2) > 225) & (rgb.max(axis=2) - rgb.min(axis=2) < 30)).astype(np.uint8)
+        n, lab, st, _ = cv2.connectedComponentsWithStats(light)
+        border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
+        bg = np.isin(lab, [i for i in range(1, n) if i in border or st[i, 4] > 600])   # 바탕 + 지워서 생긴 큰 빈자리
+        keep = cv2.GaussianBlur(cv2.erode((~bg).astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), .8)
+        cur = full(m, name)
+        cur = np.array(cur).astype(np.float32); cur[..., 3] *= keep
+        c = Image.fromarray(cur.clip(0, 255).astype(np.uint8))
+        print(f'  {name}: 흰 바탕 PDF → 지운 자리만 반영 (남은 {int((cur[..., 3] > 30).sum())} px)')
     OVR.mkdir(exist_ok=True)
     c.save(OVR / f'{name}.png')
     print('PDF 들여옴:', name, Path(path).name)
