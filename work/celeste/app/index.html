@@ -34,9 +34,9 @@
   #time{justify-self:start;font:400 clamp(54px,17vw,88px)/.95 var(--serif);letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;
     margin-top:6px;background:var(--paper2);padding:4px 10px 2px;box-shadow:6px 6px 0 var(--bleu)}
   #time span{color:var(--bleu)}
-  #moonBox{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 6px 8px;background:var(--paper2);border-radius:50% 50% 4px 4px}
-  #moon{width:54px;height:54px}
-  #moonTxt{font:10px var(--sans);letter-spacing:.12em;color:var(--grey);white-space:nowrap}
+  #moonBox{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px}
+  #moon{width:76px;height:76px;display:block;margin:-6px 0 -4px}
+  #moonTxt{font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em;color:var(--ink);white-space:nowrap;background:#fff;padding:1px 5px;outline:1px solid var(--ink)}
   #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--paper2);padding:4px 6px 4px 10px;outline:1px solid var(--ink)}
   #subject{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);background:none;font:16px var(--sans);padding:6px 0;
     color:var(--ink);border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
@@ -71,16 +71,20 @@
   /* 파란 마름모 띠 */
   #bottom::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid var(--ink);
     background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 0L20 10 10 20 0 10Z' fill='%231E22D6'/%3E%3C/svg%3E") 0 0/20px 20px repeat-x,#fff}
-  #status{font:italic 13px var(--serif);color:#555;text-align:center;min-height:18px;margin-bottom:10px}
+  #status{font:12px 'American Typewriter','Courier New',monospace;color:#333;text-align:center;min-height:18px;margin-bottom:10px}
   #btns{display:flex;gap:10px}
-  #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em}
+  #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em;box-shadow:5px 5px 0 var(--ink)}
   #go.run{background:var(--ink)}
   #quit{width:88px;height:52px;border:1px solid var(--ink);font-size:13px;letter-spacing:.1em}
   #quit[hidden]{display:none}
-  #stats{display:flex;justify-content:space-between;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  #stats{position:relative;display:flex;justify-content:space-between;margin-top:16px;border-top:1px solid var(--ink);padding-top:10px;
+    background:radial-gradient(circle,#1E22D640 1.1px,transparent 1.4px) 0 0/7px 7px}
+  #stats div{background:var(--paper2);margin:0 8px;padding:2px 0}
+  #stats::after{content:"";position:absolute;right:-6px;top:-9px;width:18px;height:18px;background:var(--bleu);
+    clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%)}
   #stats div{text-align:center;flex:1}
   #stats b{display:block;font:400 20px var(--serif)}
-  #stats span{font-size:10px;color:var(--grey);letter-spacing:.14em}
+  #stats span{font:10px 'American Typewriter','Courier New',monospace;color:#555;letter-spacing:.08em}
   #toast{position:fixed;left:50%;top:64%;transform:translate(-50%,-50%);z-index:20;background:var(--ink);color:var(--paper);
     padding:10px 18px;font:italic 15px var(--serif);opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
   #toast.on{opacity:1}
@@ -100,7 +104,7 @@
   <header id="top">
     <div id="brand"><span id="date"></span><b>BLEU <i>MINUIT</i></b></div>
     <div id="time">25<span>:</span>00</div>
-    <div id="moonBox"><svg id="moon" viewBox="-50 -50 100 100"></svg><div id="moonTxt"></div></div>
+    <div id="moonBox"><canvas id="moon"></canvas><div id="moonTxt"></div></div>
     <div id="row">
       <input id="subject" placeholder="무엇에 집중할까요" maxlength="20" enterkeyhint="done" autocomplete="off">
       <div id="presets"></div>
@@ -159,11 +163,55 @@ function moonPath(lit, r = 40){
   const rx = Math.abs(1 - 2*lit)*r, sweep = lit < .5 ? 0 : 1;      // 반달 전엔 그림자 경계가 오른쪽으로, 지나면 왼쪽으로 부푼다
   return `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
 }
+/* 콜라주 달: 밝은 쪽 = 달 사진(흑백), 그림자 쪽 = 클랭 블루 망점 종이.
+   경계는 가로 조각으로 어긋나는 글리치, 작은 궤도와 별이 진행도만큼 돈다. 보름이 되면 흰 스티커 테두리 */
+let moonImg = null, moonLast = '';
+loadImg(PARTS + 'obj_moon.webp').then(i=>{ moonImg = i; moonLast = ''; paint(); });
 function paintMoon(p){
-  // 진행도 0 → 새 달, 1 → 보름달
-  $('moon').innerHTML = `<circle r="40" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="2 3"/>
-    <path d="${moonPath(p)}" fill="${p >= 1 ? '#1E22D6' : '#121212'}"/>
-    <circle r="46" fill="none" stroke="#12121222"/>`;
+  const cv = $('moon'), dpr = Math.min(2, devicePixelRatio || 1), S = 76, key = (p*400|0) + '/' + !!moonImg;
+  if(key === moonLast) return; moonLast = key;
+  if(cv.width !== S*dpr){ cv.width = cv.height = S*dpr; }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
+  const c = S/2, r = 25, full = p >= 1;
+  g.save(); g.translate(c, c);
+  // 지금 느낌: 점선 원 + 얇은 바깥 원
+  g.setLineDash([2, 3]); g.strokeStyle = '#121212'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, r + 6, 0, Math.PI*2); g.stroke(); g.setLineDash([]);
+  // 파란 블록 그림자 (시간 글자와 같은 문법)
+  g.fillStyle = '#121212'; g.beginPath(); g.arc(3, 3, r, 0, Math.PI*2); g.fill();
+  // 그림자 쪽: 클랭 블루 + 흰 망점
+  g.fillStyle = B; g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.fill();
+  g.save(); g.clip(); g.fillStyle = '#ffffff66';
+  for(let y = -r; y <= r; y += 4) for(let x = -r + ((y/4) & 1)*2; x <= r; x += 4){ g.beginPath(); g.arc(x, y, .75, 0, Math.PI*2); g.fill(); }
+  g.restore();
+  // 밝은 쪽: 달 사진을 위상 모양으로 오려서 가로 조각마다 살짝 어긋나게
+  if(p > 0 && moonImg){
+    const o = document.createElement('canvas'); o.width = o.height = Math.ceil(2*r*dpr);
+    const q = o.getContext('2d'); q.setTransform(dpr, 0, 0, dpr, r*dpr, r*dpr);
+    const rx = Math.abs(1 - 2*p)*r;
+    q.beginPath(); q.arc(0, 0, r, -Math.PI/2, Math.PI/2);
+    if(p < .5) q.ellipse(0, 0, Math.max(rx, .01), r, 0, Math.PI/2, -Math.PI/2, true);
+    else q.ellipse(0, 0, Math.max(rx, .01), r, 0, Math.PI/2, Math.PI*1.5, false);
+    q.closePath(); q.clip();
+    q.filter = 'grayscale(1) contrast(1.25) brightness(1.05)'; q.drawImage(moonImg, -r, -r, 2*r, 2*r); q.filter = 'none';
+    const rnd = rngOf('moon' + Math.floor(p*40));
+    for(let y = -r; y < r;){
+      const h = 2 + Math.floor(rnd()*6), dx = full ? 0 : rnd() < .28 ? (rnd() - .5)*7 : 0;
+      g.drawImage(o, 0, (y + r)*dpr, o.width, h*dpr, -r + dx, y, 2*r, h);
+      if(!full && rnd() < .07){ g.fillStyle = rnd() < .5 ? '#fff' : B; g.fillRect(-r + rnd()*r, y, 4 + rnd()*12, 1.5); }
+      y += h;
+    }
+  }
+  if(full){                                            // 보름: 흰 스티커 테두리
+    g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, r + 1.5, 0, Math.PI*2); g.stroke();
+  }
+  // 작은 궤도: 뒤 반은 달 아래로 가려진 것처럼 흐리게, 앞 반은 진하게. 별은 진행도만큼 돈다
+  g.rotate(-.35);
+  g.strokeStyle = B; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(0, 0, r + 11, 7, 0, 0, Math.PI); g.stroke();
+  const a = Math.PI + p*Math.PI*2, sx = Math.cos(a)*(r + 11), sy = Math.sin(a)*7, R5 = full ? 7 : 4.5, k = R5*.13;
+  g.save(); g.translate(sx, sy); g.rotate(.35); g.fillStyle = full ? B : '#121212';
+  g.beginPath(); g.moveTo(0, -R5); g.quadraticCurveTo(k, -k, R5, 0); g.quadraticCurveTo(k, k, 0, R5); g.quadraticCurveTo(-k, k, -R5, 0); g.quadraticCurveTo(-k, -k, 0, -R5); g.fill();
+  g.restore(); g.restore();
 }
 
 /* ═══ 오늘의 콜라주 (화면 전체) ═══
@@ -296,9 +344,9 @@ async function buildCollage(){
   for(let i = 0; i < 4; i++){ const x = W*rr(.05, .95), y = H*rr(.2, .9); const s = star(x, y, rr(5, 11), B);
     if(i < 3) b2 += s; else if(!nearFace(x, y, 30)) f1 += s; }
   // 8) 타자기 글귀 상자 + 곡선 글귀
-  { const L = pick(LINES), w = Math.min(190, W*.46), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.29, .36), lh = 13;
-    b2 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
-    b2 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="10" fill="${K}">` +
+  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.24, .3), lh = 12;
+    f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
+    f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="9.5" fill="${K}">` +
       L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
   { const r = W*rr(.32, .42), cx = sx(W*rr(.7, .9)), cy = H*rr(.72, .86);
     b2 += `<path id="arc" d="M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}" fill="none" stroke="${B}" stroke-width=".6" stroke-dasharray="1 3"/>
@@ -323,6 +371,7 @@ async function buildCollage(){
   $('bgo').replaceChildren(bo); $('fgo').replaceChildren(fo);
   for(const id of ['bg1','bg2','fg1']) $(id).setAttribute('viewBox', `0 0 ${AW} ${H}`);
   const g = t => `<g transform="translate(${OX} 0)">${t}</g>`;
+  for(const id of ['bg1','bgo','bg2','fgo','fg1']) $(id).style.clipPath = OX ? `inset(0 0 0 ${OX}px)` : '';   // 가로: 왼쪽 글자 칸으로 넘치지 않게
   $('bg1').innerHTML = defs + g(b1); $('bg2').innerHTML = g(b2); $('fg1').innerHTML = g(f1);
   window.TODAY = objs.map(o=>o.n + '·' + TREAT_KO[o.kind] + (o.glitch ? '·글리치' : ''));
 }
@@ -456,10 +505,10 @@ function fit(){
   $('app').style.height = appH() + 'px';
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
-  const sc = H / (VIEW_Y1 - VIEW_Y0);
-  const fw = IW*sc, fh = IH*sc;
-  Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:(-VIEW_Y0*sc) + 'px'});
-  FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop - VIEW_Y0*sc, sc};   // 화면(앱) 좌표의 원화 위치
+  const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? 1 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
+  const fw = IW*sc, fh = IH*sc, top = H + (land ? 0 : 10) - VIEW_Y1*sc;    // 난간 아래(VIEW_Y1)를 무대 바닥에 맞춘다
+  Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
+  FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};   // 화면(앱) 좌표의 원화 위치
   clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
 }
 addEventListener('resize', fit);
