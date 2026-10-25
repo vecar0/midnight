@@ -106,14 +106,14 @@ function simulate(t, dt){
   // 고개: 가끔 다른 곳을 본다. 손가락이 최근에 움직였으면 그쪽을 본다
   const pointing = S.pointer && Number.isFinite(S.pointer.x) && performance.now() - S.pointer.t < 2500;
   // 가만히 있어도 여러 느린 흔들림이 겹쳐 미세하게 움직이고, 가끔 천천히 다른 곳을 본다
-  const idleX = Math.sin(t*.37)*1.6 + Math.sin(t*.61 + 1.3)*1.0 + Math.sin(t*1.13 + .4)*.35;
-  const idleY = Math.sin(t*.29 + 2)*.8 + Math.sin(t*.83)*.35;
+  const idleX = Math.sin(t*.37)*2.3 + Math.sin(t*.61 + 1.3)*1.4 + Math.sin(t*1.13 + .4)*.45;
+  const idleY = Math.sin(t*.29 + 2)*.3 + Math.sin(t*.83)*.12;
   let glance = false;
-  if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/90, -6, 6); H.ty = clamp((S.pointer.y - 880)/180, -3, 3); }
-  else if(t > H.next){ const look = Math.random() < .45; H.tx = look ? rnd(-5, 5) : rnd(-1, 1); H.ty = look ? rnd(-2.2, 1.2) : 0; H.next = t + rnd(3, 7.5); glance = look; }
-  spring(H, 7, H.tx + idleX + S.tilt.x*5, H.ty + idleY + S.tilt.y*2.5, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
+  if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/75, -8, 8); H.ty = clamp((S.pointer.y - 880)/300, -1, 1); }
+  else if(t > H.next){ const look = Math.random() < .45; H.tx = look ? rnd(-7, 7) : rnd(-1.5, 1.5); H.ty = look ? rnd(-.8, .5) : 0; H.next = t + rnd(3, 7.5); glance = look; }
+  spring(H, 7, H.tx + idleX + S.tilt.x*5, H.ty + idleY + S.tilt.y*.8, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
   // 상체는 고개의 1/4쯤을 늦게 따라온다 → 목이 덜 꺾인다
-  spring(S.torso, 4, H.x*.25, 0, dt, 4);
+  spring(S.torso, 4, H.x*.3, 0, dt, 4);
   // 숨: 박자 3.8~4.8초, 들숨 40%·날숨 50%·쉼 10%
   S.breath.ph += dt/(4.3 + Math.sin(t*.11)*.5 + Math.sin(t*.037)*.3);
   const bp = S.breath.ph % 1;
@@ -172,7 +172,7 @@ const NECK = [650, 1150];
 let HT = {c:1, s:0, x:0, y:0};
 function headXform(t){
   const a = S.roll.x;
-  HT = {c:Math.cos(a), s:Math.sin(a), x:S.head.x, y:S.head.y - breathAt()*2.6};   // 머리는 어깨에 실려 오르내린다
+  HT = {c:Math.cos(a), s:Math.sin(a), x:S.head.x, y:S.head.y - breathAt()*.8};   // 머리는 어깨에 실려 오르내린다
 }
 function hp(x, y){                                          // 쉬는 자세의 점 → 머리를 따라 움직인 점
   const dx = x - NECK[0], dy = y - NECK[1];
@@ -180,7 +180,7 @@ function hp(x, y){                                          // 쉬는 자세의 
 }
 function tp(x, y){                                          // 상체: 어깨는 숨·고개를 따라, 난간 쪽으로 갈수록 고정
   const wb = 1 - sm(1120, 1950, y);
-  return [x + S.torso.x*wb, y - breathAt()*3*wb];
+  return [x + S.torso.x*wb, y - breathAt()*1.1*wb];
 }
 function poseBody(m){ for(let k=0;k<m.rest.length;k+=2){ const q = tp(m.rest[k], m.rest[k+1]); m.pos[k] = q[0]; m.pos[k+1] = q[1]; } }
 function headRigid(m, ox, oy){ for(let k=0;k<m.rest.length;k+=2){ const q = hp(m.rest[k], m.rest[k+1]); m.pos[k] = q[0] + (ox||0); m.pos[k+1] = q[1] + (oy||0); } }
@@ -233,7 +233,7 @@ function draw(t, stage){
     if(g === 'static') rigid(m, 0, 0);
     else if(name === 'neck') poseNeck(m);
     else if(g === 'body') poseBody(m);
-    else if(g === 'arms') rigid(m, 0, -b*.5);
+    else if(g === 'arms') rigid(m, 0, -b*.2);
     else if(g === 'hairFront') headRigid(m);
     else if(g === 'hairBack' || g === 'underHair') poseNeck(m, 1050, 1400);
     else if(g === 'strand') poseStrand(m, STR[name]);
