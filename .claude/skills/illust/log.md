@@ -56,3 +56,9 @@
 - 오브젝트 추가 24개 (2026-10-25): medium 4k 3:2 transparent, 4×2 시트 3장 (3.75크레딧). 프롬프트는 1차 시트와 같은 문장틀
   ("A sheet of eight separate black-and-white photographic cut-out objects … loose 4 by 2 grid … real photographs converted to grayscale…")
   → 천체·시간 / 조각·석고 / 꽃·새·사물. 전부 한 번에 성공, 낱개 분리는 tools/celeste_objects.py SHEETS 표
+
+## 2026-10-25 셀레스트 헤일로 (work/celeste/parts/halo_back.webp, halo_front.webp)
+- 모델: gpt_image_2_5, quality low, 21:9, background transparent (0.25크레딧, 한 번에 확정)
+- 레퍼런스: char.webp 목걸이·별 펜던트·달 귀걸이 크롭 1장 (금속 표현만)
+- 프롬프트: "Anime illustration asset: a single elegant halo ring, seen from slightly above in perspective so it forms a wide flat ellipse (about four times wider than tall), centered, filling the width, on a fully transparent background. Use the reference image only for the metal rendering style: polished chrome silver drawn with thin black ink outlines, hard cel-shaded white highlight bands and dark grey reflections, no soft glow. The ring is slender and refined, like fine jewelry: a thin double band with a delicate engraved line between the bands, small eight-pointed silver stars set along it at irregular intervals, and one slightly larger eight-pointed star at the front center with a small deep cobalt blue (#1E22D6) gemstone in its middle as the only color. A few very fine silver threads of light crossing the ring. Luxurious, minimal, gothic, not cluttered. No text, no glow particles, no head or person, no background, no ornate filler swirls."
+- 후처리: 고리 중심 (671.5, 245), 가로 반지름 637.5. 곡선 y = 245 − 28·(1−u²) 위/아래로 뒤·앞 반 분리

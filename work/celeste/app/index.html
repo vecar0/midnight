@@ -205,8 +205,8 @@ const OBJS = ['angel','arch','armillary','astronaut','birdcage','book','bust','c
   'dove','earth','gargoyle','hands','hourglass','iris','keyhand','lily','mask','mirror','moon','perfume','roses','saturn','telescope','watch','wing'];
 const PARTS = '../parts/';
 // 원화(1228×2416)에서 무대에 보일 세로 범위: 머리 위 ~ 난간 아래
-const IW = 1228, IH = 2416, VIEW_Y0 = 330, VIEW_Y1 = 2150;
-const HALO = {x:650, y:455, rx:250, ry:58};          // 원화 좌표, 머리 위 헤일로
+const IW = 1228, IH = 2416, VIEW_Y0 = 200, VIEW_Y1 = 2150;
+const HALO = {x:650, y:318, rx:250};          // 원화 좌표, 머리 위에 살짝 떠 있게          // 원화 좌표, 머리 위 헤일로
 
 /* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
 function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
@@ -307,16 +307,11 @@ function sizeCollage(){
   document.querySelectorAll('#collage .o, #front .o').forEach(el=>{ el.style.width = (H * el.dataset.h/100 * el.dataset.ar) + 'px'; });
 }
 
-/* ═══ 헤일로: 머리 뒤(위쪽 반원)와 앞(아래쪽 반원)으로 나눠 그린다. 별이 진행도만큼 돈다 ═══ */
-function haloSvg(front, p){
-  const {x, y, rx, ry} = HALO;
-  const arc = front ? `M${x-rx} ${y} A${rx} ${ry} 0 0 0 ${x+rx} ${y}` : `M${x-rx} ${y} A${rx} ${ry} 0 0 1 ${x+rx} ${y}`;
-  // 별: 왼쪽 끝에서 시작해 뒤(위)를 지나 앞(아래)으로 한 바퀴
-  const a = Math.PI + p*Math.PI*2, sx = x + Math.cos(a)*rx, sy = y + Math.sin(a)*ry;
-  const isFront = Math.sin(a) > 0;
-  const star = (isFront === front) ? `<path transform="translate(${sx} ${sy}) scale(${p >= 1 ? 1.5 : 1})" d="M0 -22L5 -5 22 0 5 5 0 22 -5 5 -22 0 -5 -5Z" fill="#1E22D6"/>` : '';
-  const trail = p > 0 ? '' : '';
-  return `<path d="${arc}" fill="none" stroke="#121212" stroke-width="2.2" stroke-dasharray="${front ? '0' : '6 7'}" opacity="${front ? .8 : .45}"/>${trail}${star}`;
+/* ═══ 헤일로: 은빛 고리 그림(힉스필드)을 뒤 반(머리 뒤)·앞 반(머리 앞)으로 나눠 머리를 감싼다 ═══
+   halo_*.webp 1344×576 안에서 고리 중심 (671.5, 245), 가로 반지름 637.5 */
+function haloSvg(front){
+  const s = HALO.rx/637.5, w = 1344*s, h = 576*s;
+  return `<image href="${PARTS}halo_${front ? 'front' : 'back'}.webp" x="${HALO.x - 671.5*s}" y="${HALO.y - 245*s}" width="${w}" height="${h}"/>`;
 }
 
 /* ═══ 기록 (기존 앱과 같은 키) ═══ */
@@ -454,7 +449,6 @@ function paint(){
   $('time').classList.toggle('rest', phase !== 'focus' && mode !== 'idle');
   const p = progress();
   paintMoon(p);
-  $('haloB').innerHTML = haloSvg(false, p); $('haloF').innerHTML = haloSvg(true, p);
   $('stageName').textContent = STAGES.filter(x=>p >= x[0]).pop()[1];
   $('quit').hidden = mode === 'idle' || mode === 'finished' && phase === 'focus';
   // 세트 표시: ●●○○ + 지금 단계
@@ -567,6 +561,7 @@ let rig = null, shown = 0;
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
+  $('haloB').innerHTML = haloSvg(false); $('haloF').innerHTML = haloSvg(true);
   buildCollage().catch(e=>console.warn('collage', e));
   rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
   $('loading').remove();
