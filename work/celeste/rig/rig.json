@@ -6,6 +6,9 @@
  "order": [
   "under",
   "back_hair",
+  "strand00b",
+  "strand01b",
+  "strand02b",
   "restHead",
   "neck",
   "topwear",
@@ -25,11 +28,8 @@
   "irides-r",
   "irides-l",
   "eyelash-l",
-  "strand00b",
   "strand00",
-  "strand01b",
   "strand01",
-  "strand02b",
   "strand02",
   "earMoon",
   "earStar",
@@ -357,13 +357,12 @@
     115,
     219
    ],
-   "group": "strand",
+   "group": "underHair",
    "root": [
     128,
     1377
    ],
-   "len": 284,
-   "soft": 1
+   "len": 284
   },
   "strand01b": {
    "xy": [
@@ -374,13 +373,12 @@
     410,
     926
    ],
-   "group": "strand",
+   "group": "underHair",
    "root": [
     336,
     598
    ],
-   "len": 928,
-   "soft": 1
+   "len": 928
   },
   "strand02b": {
    "xy": [
@@ -391,13 +389,12 @@
     313,
     981
    ],
-   "group": "strand",
+   "group": "underHair",
    "root": [
     765,
     533
    ],
-   "len": 986,
-   "soft": 1
+   "len": 986
   }
  }
 }
