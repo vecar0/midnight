@@ -97,12 +97,53 @@
     #bottom{grid-column:1;grid-row:2;margin:0 0 10px 12px;padding-top:28px;align-self:end;border:1px solid var(--ink)}
     #recent{display:none}
   }
+  /* ── 달력 ── */
+  #date{font:italic 12px var(--serif);color:#bdbdb8;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+  #date::after{content:"";width:11px;height:10px;border:1px solid #bdbdb8;border-top-width:3px}
+  #cal{position:fixed;inset:0;z-index:30;background:var(--paper2);overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom))}
+  #cal[hidden]{display:none}
+  #cal .ch{display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;padding:8px 10px}
+  #cal .ch div{text-align:center} #cal .ch small{display:block;font:600 9px var(--sans);letter-spacing:.34em;color:#8b8ff5}
+  #cal .ch b{font:400 20px var(--serif)} #cal .ch button{font:24px var(--serif);color:#fff;width:36px}
+  #calNote{font:11px 'American Typewriter','Courier New',monospace;color:#555;margin:8px 2px 6px}
+  #cal .cw,#calGrid{display:grid;grid-template-columns:repeat(7,1fr)}
+  #cal .cw span{font:10px var(--sans);color:var(--grey);text-align:center;padding:4px 0;letter-spacing:.1em}
+  #calGrid{gap:3px;background:radial-gradient(circle,#1E22D630 1.1px,transparent 1.4px) 0 0/7px 7px;padding:3px;outline:1px solid var(--ink)}
+  #calGrid .d{position:relative;aspect-ratio:1/1.15;background:#fff;overflow:visible;font:10px 'American Typewriter','Courier New',monospace}
+  #calGrid .d.out{visibility:hidden}
+  #calGrid .d i{position:absolute;left:2px;top:2px;font-style:normal;z-index:5;background:#fff;padding:0 2px;line-height:1.3}
+  #calGrid .d .m{position:absolute;right:3px;bottom:3px;width:13px;height:13px;opacity:.8}
+  #calGrid .d .st{position:absolute;inset:4% 0 -2%;display:grid;place-items:center;z-index:1;pointer-events:none}
+  #calGrid .d .st canvas{max-width:100%;max-height:100%}
+  #calGrid .d.has::before{content:"";position:absolute;left:3px;right:3px;bottom:3px;height:3px;background:var(--bleu);opacity:.35}
+  #calGrid .d.today{outline:2px solid var(--ink);outline-offset:-2px}
+  #calGrid .d.sel{box-shadow:0 0 0 2px var(--bleu);z-index:3}
+  #plan{margin-top:12px;background:#fff;outline:1px solid var(--ink);padding:10px 12px;box-shadow:5px 5px 0 var(--bleu)}
+  #plan .ph{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:6px;margin-bottom:6px}
+  #plan .ph b{font:400 17px var(--serif)} #planState{font:11px 'American Typewriter','Courier New',monospace;color:var(--bleu)}
+  #planList .it{display:grid;grid-template-columns:1fr auto 26px;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #0002}
+  #planList .it span{font-size:14px} #planList .it em{font:12px 'American Typewriter','Courier New',monospace;font-style:normal;color:#555}
+  #planList .it.ok em{color:var(--bleu)} #planList .it.ok span::after{content:" ✦";color:var(--bleu)}
+  #planList .it u{grid-column:1/3;height:3px;background:#0001;position:relative;text-decoration:none}
+  #planList .it u::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--bleu)}
+  #planList .it button{grid-row:1/3;grid-column:3;font-size:16px;color:var(--grey)}
+  #planList .none{font:12px 'American Typewriter','Courier New',monospace;color:var(--grey);padding:6px 0}
+  #planAdd{display:flex;gap:6px;align-items:center;margin-top:8px}
+  #planAdd input{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);font:16px var(--sans);padding:5px 0;background:none;border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
+  #planAdd select{font:15px var(--serif);border:1px solid var(--ink);background:#fff;padding:3px 4px;border-radius:0;color:var(--ink)}
+  #planAdd span{font-size:12px;color:#555}
+  #planAdd button{background:var(--ink);color:#fff;padding:7px 12px;font-size:13px}
+  #plan.past #planAdd,#plan.past .it button{display:none}
+  #calClose{display:block;width:100%;margin-top:16px;height:46px;border:1px solid var(--ink);background:#fff;letter-spacing:.2em}
+  #recent button.ok{color:var(--bleu);border-color:var(--bleu)}
+  #recent button.add{border-style:dashed}
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
 </style></head><body>
 <div id="app">
   <svg id="bg1" class="layer"></svg><div id="bgo" class="layer"></div><svg id="bg2" class="layer"></svg>
   <header id="top">
-    <div id="brand"><span id="date"></span><b>BLEU <i>MINUIT</i></b></div>
+    <div id="brand"><button id="date" type="button"></button><b>BLEU <i>MINUIT</i></b></div>
     <div id="time">25<span>:</span>00</div>
     <div id="moonBox"><canvas id="moon"></canvas><div id="moonTxt"></div></div>
     <div id="row">
@@ -135,6 +176,22 @@
   </footer>
 </div>
 <div id="toast"></div>
+<section id="cal" hidden>
+  <div class="ch"><button id="calPrev" type="button">‹</button><div><small>CALENDRIER</small><b id="calTitle"></b></div><button id="calNext" type="button">›</button></div>
+  <div id="calNote">계획을 다 채운 날엔 콜라주 조각이 붙어요</div>
+  <div class="cw"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+  <div id="calGrid"></div>
+  <div id="plan">
+    <div class="ph"><b id="planTitle"></b><span id="planState"></span></div>
+    <div id="planList"></div>
+    <form id="planAdd" autocomplete="off">
+      <input id="planSubj" placeholder="과목" maxlength="20" enterkeyhint="done">
+      <select id="planMin"><option>25</option><option selected>50</option><option>75</option><option>100</option><option>150</option></select><span>분</span>
+      <button type="submit">추가</button>
+    </form>
+  </div>
+  <button id="calClose" type="button">닫기</button>
+</section>
 
 <script src="../rig/rig.js"></script>
 <script>
@@ -164,30 +221,38 @@ function moonPath(lit, r = 40){
   return `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
 }
 /* 콜라주 달 (레퍼런스처럼): 흑백 달 사진 + 뒤로 비켜 놓은 회색 원.
-   그림자 쪽은 클랭 블루를 곱하기로 얹어 사진 결이 비친다. 흰 궤도 위 작은 별이 진행도만큼 돈다 */
+   모양은 오늘 실제 달의 위상. 그림자 쪽은 클랭 블루를 곱하기로 얹어 사진 결이 비친다.
+   집중 진행도는 흰 궤도 위 별이 돈다 */
 let moonImg = null, moonLast = '';
-loadImg(PARTS + 'obj_moon.webp').then(i=>{ moonImg = i; moonLast = ''; paint(); });
+loadImg(PARTS + 'obj_moon.webp').then(i=>{ moonImg = i; moonLast = ''; paint(); paintCal(); });
+// 달 원판 하나 그리기 (g 원점 = 달 중심). age = 달 나이(일)
+function moonDisc(g, r, age){
+  const f = age/29.530588853, lit = (1 - Math.cos(2*Math.PI*f))/2;
+  g.save(); g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.clip();
+  if(moonImg){ g.filter = 'grayscale(1) contrast(1.15)'; g.drawImage(moonImg, -r - 1, -r - 1, 2*r + 2, 2*r + 2); g.filter = 'none'; }
+  else { g.fillStyle = '#bbb'; g.fillRect(-r, -r, 2*r, 2*r); }
+  if(lit < .995){
+    if(f >= .5) g.scale(-1, 1);                                      // 기우는 달: 밝은 쪽이 왼쪽
+    const rx = Math.abs(1 - 2*lit)*r;
+    g.beginPath(); g.arc(0, 0, r + 1, Math.PI/2, Math.PI*1.5);                               // 왼쪽 반원(어두운 쪽 바깥)
+    if(lit < .5) g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, Math.PI/2, false); // 경계가 오른쪽으로 부풂
+    else g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, -Math.PI*1.5, true);      // 경계가 왼쪽으로 들어감
+    g.closePath();
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = B; g.globalAlpha = .92; g.fill();
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  }
+  g.restore();
+}
 function paintMoon(p){
-  const cv = $('moon'), dpr = Math.min(3, devicePixelRatio || 1), S = 124, key = (p*500|0) + '/' + !!moonImg;
+  const age = moonAge(), cv = $('moon'), dpr = Math.min(3, devicePixelRatio || 1), S = 124;
+  const key = (p*500|0) + '/' + !!moonImg + '/' + (age*20|0);
   if(key === moonLast) return; moonLast = key;
   if(cv.width !== S*dpr){ cv.width = cv.height = S*dpr; }
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
   const c = S/2, r = 40;
   g.save(); g.translate(c + 4, c - 2);
   g.fillStyle = '#8a8a86'; g.beginPath(); g.arc(-11, 9, r, 0, Math.PI*2); g.fill();          // 비켜 놓은 회색 원
-  g.save(); g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.clip();
-  if(moonImg){ g.filter = 'grayscale(1) contrast(1.15)'; g.drawImage(moonImg, -r - 1, -r - 1, 2*r + 2, 2*r + 2); g.filter = 'none'; }
-  else { g.fillStyle = '#bbb'; g.fillRect(-r, -r, 2*r, 2*r); }
-  if(p < 1){                                                                                // 그림자 쪽: 사진 위에 블루 곱하기
-    const rx = Math.abs(1 - 2*p)*r;
-    g.beginPath(); g.arc(0, 0, r + 1, Math.PI/2, Math.PI*1.5);                               // 왼쪽 반원(어두운 쪽 바깥)
-    if(p < .5) g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, Math.PI/2, false);   // 경계가 오른쪽으로 부풂
-    else g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, -Math.PI*1.5, true);       // 경계가 왼쪽으로 들어감
-    g.closePath();
-    g.globalCompositeOperation = 'multiply'; g.fillStyle = B; g.globalAlpha = .92; g.fill();
-    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
-  }
-  g.restore();
+  moonDisc(g, r, age);
   // 흰 궤도(앞쪽 반만 달 위로) + 진행도 별
   g.rotate(-.42); const orx = r + 16, ory = 11;
   g.strokeStyle = '#fff'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(0, 0, orx, ory, 0, 0, Math.PI); g.stroke();
@@ -217,9 +282,9 @@ const IMG = {}, TC = {};
 const getImg = n => IMG[n] || (IMG[n] = loadImg(PARTS + 'obj_' + n + '.webp'));
 function canvasOf(w, h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 // 그림 처리: 흑백/블루/블루 그라데이션/망점/반전/잔상 (+글리치, +흰 스티커 테두리)
-function treat(img, kind, glitch, sticker, seed){
-  const key = [img.src, kind, glitch, sticker, seed].join('|'); if(TC[key]) return TC[key];
-  const s = Math.min(1, 460 / Math.max(img.width, img.height));
+function treat(img, kind, glitch, sticker, seed, max = 460){
+  const key = [img.src, kind, glitch, sticker, seed, max].join('|'); if(TC[key]) return TC[key];
+  const s = Math.min(1, max / Math.max(img.width, img.height));
   const w = Math.round(img.width*s), h = Math.round(img.height*s);
   let c = canvasOf(w, h), g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
   const d = g.getImageData(0, 0, w, h), px = d.data;
@@ -283,6 +348,10 @@ async function buildCollage(){
   const fx = X => FIG.x - OX + X*FIG.sc, fy = Y => FIG.y + Y*FIG.sc;
   const face = {x:fx(650), y:fy(800), r:300*FIG.sc}, chest = {x:fx(650), y:fy(1350)};
   const nearFace = (x, y, m = 0) => Math.hypot(x - face.x, y - face.y) < face.r + m;
+  // 달 자리(앱 좌표 → 콜라주 좌표). 여기 겹치는 것은 옅게 하거나 빼서 달이 묻히지 않게
+  const mb = $('moon').getBoundingClientRect(), ab = A.getBoundingClientRect();
+  const moon = {x:mb.left - ab.left - OX + 12, y:mb.top - ab.top + 8, w:mb.width - 20, h:mb.height - 16};
+  const hitsMoon = (x, y, w, h) => x < moon.x + moon.w && x + w > moon.x && y < moon.y + moon.h && y + h > moon.y;
   const side = R() < .5 ? 'L' : 'R', sx = v => side === 'L' ? v : W - v;      // 파란 띠 쪽 기준 좌우
   let b1 = '', b2 = '', f1 = '';
   const defs = `<defs>
@@ -318,6 +387,7 @@ async function buildCollage(){
   // 6) 작은 파란/검은 막대
   for(let i = 0; i < 6; i++){ const x = W*rr(.05, .85), y = H*rr(.12, .9), w = W*rr(.06, .26), h = rr(7, 22);
     if(nearFace(x + w/2, y, 20)) continue;
+    if(hitsMoon(x, y, w, h)) continue;
     const t = i % 3;
     const el = t === 0 ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${B}"/>` : t === 1 ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${B}" stroke-width="1.4"/>` : `<rect x="${x}" y="${y}" width="${w*.7}" height="${h*.7}" fill="${K}"/>`;
     if(i < 5) b2 += el; else if(!nearFace(x, y, 60)) f1 += el; }
@@ -328,7 +398,8 @@ async function buildCollage(){
   for(let i = 0; i < 4; i++){ const x = W*rr(.05, .95), y = H*rr(.2, .9); const s = star(x, y, rr(5, 11), B);
     if(i < 3) b2 += s; else if(!nearFace(x, y, 30)) f1 += s; }
   // 8) 타자기 글귀 상자 + 곡선 글귀
-  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.24, .3), lh = 12;
+  Object.assign($('stageLbl').style, side === 'L' ? {left:'auto', right:'12px'} : {left:'12px', right:'auto'});   // 이름표는 글귀 반대쪽
+  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.31, .34), lh = 12;
     f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
     f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="9.5" fill="${K}">` +
       L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
@@ -340,7 +411,9 @@ async function buildCollage(){
   const [doveImg, ...imgs] = await Promise.all([getImg('dove'), ...objs.map(o=>getImg(o.n))]);
   if(my !== collageBusy) return;
   const bo = document.createDocumentFragment(), fo = document.createDocumentFragment();
-  objs.forEach((o, i)=>{ const c = treat(imgs[i], o.kind, o.glitch, o.sticker, dayKey() + i);
+  objs.forEach((o, i)=>{
+    if(!o.front && hitsMoon(o.x*W, o.y*H, H*o.h*imgs[i].width/imgs[i].height, H*o.h)){ o.kind = 'ghost'; o.glitch = false; }   // 달 뒤: 옅은 잔상으로
+    const c = treat(imgs[i], o.kind, o.glitch, o.sticker, dayKey() + i);
     const h = H*o.h, w = h * c.width/c.height, el = document.createElement('div'); el.className = 'o';
     Object.assign(el.style, {left:(OX + o.x*W) + 'px', top:(o.y*H) + 'px', width:w + 'px', transform:`rotate(${o.rot}deg)`});
     el.appendChild(cloneCanvas(c)); (o.front ? fo : bo).appendChild(el); });
@@ -348,7 +421,7 @@ async function buildCollage(){
   const n = 7 + Math.floor(R()*4), dir = R() < .5 ? 1 : -1;
   for(let i = 0, t = 0; i < n && t < 60; t++){
     const u = R(), x = W*(dir > 0 ? u : 1 - u) + rr(-40, 40), y = H*(.85 - u*.7) + rr(-60, 60), s = W*rr(.08, .2);
-    if(nearFace(x, y, s*.6)) continue;
+    if(nearFace(x, y, s*.6) || hitsMoon(x - s/2, y - s/2, s, s)) continue;
     const kind = pick(['w','w','w','b','b','k']), c = cloneCanvas(dove(doveImg, kind)), el = document.createElement('div'); el.className = 'o';
     Object.assign(el.style, {left:(OX + x - s/2) + 'px', top:(y - s/2) + 'px', width:s + 'px', transform:`scaleX(${dir}) rotate(${rr(-25, 15)}deg)`});
     el.appendChild(c); (i < n - 2 ? bo : fo).appendChild(el); i++; }
@@ -384,14 +457,95 @@ let cur = null;
 const subjOf = () => ($('subject').value.trim() || '자유 집중');
 function commit(done){ if(!cur) return;
   if(done || cur.sec >= 60){ rec.sessions.unshift({s:cur.s, t:cur.t, sec:cur.sec, mins:cur.mins, done:!!done}); rec.sessions = rec.sessions.slice(0, 200); }
-  cur = null; saveRec(); paintStats(); }
+  cur = null; saveRec(); paintStats(); checkStamp(keyOf()); }
 const esc = t => t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtMin = sec => { const m = Math.round(sec/60); return m >= 60 ? Math.floor(m/60)+'시간 '+(m%60)+'분' : m+'분'; };
 function paintStats(){
   $('sTime').textContent = fmtMin(rec.todaySec); $('sCnt').textContent = rec.done; $('sBest').textContent = rec.best + '분';
-  const recent = [...new Set(rec.sessions.map(x=>x.s))].filter(x=>x !== '자유 집중').slice(0, 4);
-  $('recent').innerHTML = recent.map(x=>'<button type="button">'+esc(x)+'</button>').join('');
+  const plan = plans[keyOf()] || [];
+  if(plan.length){
+    const by = focusedOn(keyOf());
+    $('recent').innerHTML = plan.map(it=>{ const got = Math.floor((by[it.s] || 0)/60), ok = got >= it.m;
+      return '<button type="button" data-s="'+esc(it.s)+'" class="'+(ok ? 'ok' : '')+'">'+esc(it.s)+' '+Math.min(got, it.m)+'/'+it.m+'분'+(ok ? ' ✦' : '')+'</button>'; }).join('');
+  } else {
+    const recent = [...new Set(rec.sessions.map(x=>x.s))].filter(x=>x !== '자유 집중').slice(0, 3);
+    $('recent').innerHTML = '<button type="button" class="add" data-cal="1">+ 오늘 계획</button>' + recent.map(x=>'<button type="button" data-s="'+esc(x)+'">'+esc(x)+'</button>').join('');
+  }
 }
+
+/* ═══ 달력 + 공부 계획 ═══
+   bleu.plan = {'2026-10-25':[{s:'수학', m:50}, ...]}  · 그날 그 과목을 m분 이상 집중하면 그 항목 달성
+   계획을 다 채우면 bleu.cal 에 그날의 콜라주 조각(오브젝트·처리·각도)을 붙인다. 한 번 붙은 조각은 그대로 */
+const keyOf = (d = new Date()) => d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+const dateOf = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+let plans = {}, stamps = {};
+try{ plans = JSON.parse(localStorage.getItem('bleu.plan') || '{}') || {}; }catch(e){}
+try{ stamps = JSON.parse(localStorage.getItem('bleu.cal') || '{}') || {}; }catch(e){}
+const savePlans = () => { try{ localStorage.setItem('bleu.plan', JSON.stringify(plans)); }catch(e){} };
+const saveStamps = () => { try{ localStorage.setItem('bleu.cal', JSON.stringify(stamps)); }catch(e){} };
+function focusedOn(k){                                         // 그날 과목별 집중 초
+  const t0 = +dateOf(k), t1 = t0 + 864e5, by = {};
+  rec.sessions.filter(x=>x.t >= t0 && x.t < t1).forEach(x=>{ by[x.s] = (by[x.s] || 0) + x.sec; });
+  if(cur && k === keyOf()) by[cur.s] = (by[cur.s] || 0) + cur.sec;
+  return by;
+}
+const dayDone = k => { const p = plans[k]; if(!p || !p.length) return false; const by = focusedOn(k); return p.every(it=>(by[it.s] || 0) >= it.m*60); };
+function checkStamp(k){
+  if(stamps[k] || !dayDone(k)) return;
+  const r = rngOf('cal/' + k), pool = OBJS.filter(n=>n !== 'dove');
+  stamps[k] = {n:pool[Math.floor(r()*pool.length)], k:['plain','bleu','gradient','halftone','negative','bleu'][Math.floor(r()*6)], r:Math.round((r() - .5)*24)};
+  saveStamps(); tone([659.25, 783.99, 1046.5, 1318.5], 1.2, 'sine', .09);
+  toast('오늘의 콜라주 한 조각 ✦', 3000); paintStats(); if(!$('cal').hidden) paintCal();
+}
+let calMonth = new Date(), calSel = keyOf();
+calMonth.setDate(1);
+function openCal(k = keyOf()){ calSel = k; calMonth = dateOf(k); calMonth.setDate(1); $('cal').hidden = false;
+  Object.keys(plans).forEach(checkStamp); paintCal(); }
+function smallMoon(age){                                       // 칸 구석의 작은 실제 달
+  const c = canvasOf(26, 26), g = c.getContext('2d'); g.translate(13, 13); moonDisc(g, 12, age); return c; }
+function paintCal(){
+  if($('cal').hidden) return;
+  const y = calMonth.getFullYear(), m = calMonth.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  $('calTitle').textContent = y + '년 ' + (m + 1) + '월';
+  const grid = $('calGrid'); grid.innerHTML = '';
+  const todayK = keyOf(), n = Math.ceil((first + days)/7)*7;
+  let filled = 0;
+  for(let i = 0; i < n; i++){
+    const d = i - first + 1, el = document.createElement('button'); el.type = 'button'; el.className = 'd';
+    if(d < 1 || d > days){ el.classList.add('out'); grid.appendChild(el); continue; }
+    const k = y + '-' + (m + 1) + '-' + d; el.dataset.k = k;
+    if(k === todayK) el.classList.add('today');
+    if(k === calSel) el.classList.add('sel');
+    if(plans[k] && plans[k].length) el.classList.add('has');
+    el.innerHTML = '<i>' + d + '</i>';
+    const st = stamps[k];
+    if(st){ filled++;
+      const box = document.createElement('div'); box.className = 'st'; box.style.transform = `rotate(${st.r}deg)`; el.appendChild(box);
+      getImg(st.n).then(img=>{ box.appendChild(cloneCanvas(treat(img, st.k, false, true, 'cal' + k, 140))); });
+    } else { const mc = smallMoon(moonAge(new Date(y, m, d, 21))); mc.className = 'm'; el.appendChild(mc); }
+    grid.appendChild(el);
+  }
+  $('calNote').textContent = filled ? '이번 달 콜라주 ' + filled + '조각 · 계획을 다 채운 날엔 조각이 붙어요' : '계획을 다 채운 날엔 콜라주 조각이 붙어요';
+  paintPlan();
+}
+function paintPlan(){
+  const k = calSel, d = dateOf(k), past = +d < +dateOf(keyOf()), list = plans[k] || [], by = focusedOn(k);
+  $('planTitle').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 계획';
+  $('plan').classList.toggle('past', past);
+  $('planState').textContent = stamps[k] ? '완성 ✦' : list.length ? list.filter(it=>(by[it.s] || 0) >= it.m*60).length + '/' + list.length : '';
+  $('planList').innerHTML = list.length ? list.map((it, i)=>{ const got = Math.floor((by[it.s] || 0)/60), ok = got >= it.m;
+    return '<div class="it' + (ok ? ' ok' : '') + '"><span>' + esc(it.s) + '</span><em>' + Math.min(got, it.m) + '/' + it.m + '분</em><button type="button" data-i="' + i + '" aria-label="지우기">×</button><u style="--w:' + Math.min(100, got/it.m*100) + '%"></u></div>'; }).join('')
+    : '<div class="none">' + (past ? '계획이 없던 날이에요' : '과목과 시간을 적어 계획을 세워요') + '</div>';
+}
+$('date').onclick = ()=>openCal();
+$('calClose').onclick = ()=>{ $('cal').hidden = true; paintStats(); };
+$('calPrev').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() - 1); paintCal(); };
+$('calNext').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() + 1); paintCal(); };
+$('calGrid').onclick = e=>{ const b = e.target.closest('.d'); if(!b || !b.dataset.k) return; calSel = b.dataset.k; paintCal(); };
+$('planList').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
+  plans[calSel].splice(+b.dataset.i, 1); if(!plans[calSel].length) delete plans[calSel]; savePlans(); paintCal(); };
+$('planAdd').onsubmit = e=>{ e.preventDefault(); const s = $('planSubj').value.trim() || subjOf(), m = +$('planMin').value;
+  (plans[calSel] = plans[calSel] || []).push({s, m}); savePlans(); $('planSubj').value = ''; $('planSubj').blur(); paintCal(); checkStamp(calSel); };
 
 /* ═══ 소리: 완주 화음, 포기 종 (작게) ═══ */
 let AC = null;
@@ -426,6 +580,7 @@ function tickOnce(){
   const was = remain; remain = Math.max(0, Math.round((endAt - Date.now())/1000));
   const add = Math.max(0, was - remain); rec.todaySec += add; if(cur) cur.sec += add;
   if(rec.todaySec % 15 < add) saveRec();
+  if(cur && cur.sec % 30 < add) checkStamp(keyOf());
   paint(); paintStats(); if(remain <= 0) finish();
 }
 function start(){
@@ -468,7 +623,7 @@ $('presets').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
   if(mode === 'paused'){ commit(false); }
   if(mode !== 'idle'){ mode = 'idle'; $('go').textContent = '집중 시작'; setStatus('시간을 고르고 시작하세요'); if(rig) rig.expr = ''; }
   setMins(+b.dataset.m); };
-$('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b || mode === 'run') return; $('subject').value = b.textContent; };
+$('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; if(b.dataset.cal){ openCal(); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
 $('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
 $('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
 try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}
@@ -479,7 +634,7 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode 
 
 { const d = new Date(), age = moonAge(d);
   $('date').textContent = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
-  $('moonTxt').textContent = '오늘 달 · ' + moonName(age); }
+  $('moonTxt').textContent = '오늘 달 · ' + moonName(age) + ' ' + Math.round(age) + '일'; }
 
 /* ═══ 무대 맞추기 ═══ */
 // 아이폰 홈 화면 앱은 innerHeight를 짧게 주는 경우가 있어 화면 높이를 쓴다
