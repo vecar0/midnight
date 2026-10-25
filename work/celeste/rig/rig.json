@@ -26,6 +26,14 @@
   "irides-r",
   "irides-l",
   "eyelash-l",
+  "strand00",
+  "strand01",
+  "strand02",
+  "strand03",
+  "strand04",
+  "strand05",
+  "strand06",
+  "strand07",
   "front_hair"
  ],
  "layers": {
@@ -68,7 +76,7 @@
     952
    ],
    "size": [
-    205,
+    206,
     235
    ],
    "group": "body"
@@ -163,11 +171,11 @@
   },
   "earMoon": {
    "xy": [
-    414,
+    415,
     978
    ],
    "size": [
-    101,
+    100,
     168
    ],
    "group": "earring"
@@ -270,6 +278,134 @@
     92
    ],
    "group": "feature"
+  },
+  "strand00": {
+   "xy": [
+    8,
+    1377
+   ],
+   "size": [
+    135,
+    285
+   ],
+   "group": "strand",
+   "root": [
+    127,
+    1379
+   ],
+   "len": 280
+  },
+  "strand01": {
+   "xy": [
+    152,
+    598
+   ],
+   "size": [
+    228,
+    911
+   ],
+   "group": "strand",
+   "root": [
+    308,
+    600
+   ],
+   "len": 906
+  },
+  "strand02": {
+   "xy": [
+    227,
+    598
+   ],
+   "size": [
+    201,
+    871
+   ],
+   "group": "strand",
+   "root": [
+    325,
+    599
+   ],
+   "len": 860
+  },
+  "strand03": {
+   "xy": [
+    321,
+    599
+   ],
+   "size": [
+    187,
+    925
+   ],
+   "group": "strand",
+   "root": [
+    337,
+    601
+   ],
+   "len": 918
+  },
+  "strand04": {
+   "xy": [
+    329,
+    601
+   ],
+   "size": [
+    252,
+    926
+   ],
+   "group": "strand",
+   "root": [
+    352,
+    603
+   ],
+   "len": 921
+  },
+  "strand05": {
+   "xy": [
+    731,
+    533
+   ],
+   "size": [
+    142,
+    987
+   ],
+   "group": "strand",
+   "root": [
+    757,
+    535
+   ],
+   "len": 982
+  },
+  "strand06": {
+   "xy": [
+    753,
+    534
+   ],
+   "size": [
+    191,
+    981
+   ],
+   "group": "strand",
+   "root": [
+    765,
+    538
+   ],
+   "len": 974
+  },
+  "strand07": {
+   "xy": [
+    757,
+    539
+   ],
+   "size": [
+    290,
+    977
+   ],
+   "group": "strand",
+   "root": [
+    774,
+    545
+   ],
+   "len": 969
   },
   "front_hair": {
    "xy": [

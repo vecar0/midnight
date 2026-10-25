@@ -33,6 +33,11 @@ GROUP = {'back_hair': 'hairBack', 'front_hair': 'hairFront', 'neck': 'body', 'to
          'earMoon': 'earring', 'earStar': 'earring'}
 
 
+def sm_np(a, b, x):
+    t = np.clip((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
 def premul_resize(rgba, size):
     a = rgba[..., 3:4].astype(np.float32) / 255
     pm = np.dstack([rgba[..., :3].astype(np.float32) * a, a * 255])
@@ -117,7 +122,53 @@ def main():
     fh[0] = np.where(to_front[..., None], orig, fh[0]); fh[1] = np.maximum(fh[1], to_front * oa)
     bh[0] = np.where(to_back[..., None], orig, bh[0]); bh[1] = np.maximum(bh[1], to_back * oa)
 
-    MOVING = {'front_hair', 'back_hair', 'irides-l', 'irides-r', 'earMoon', 'earStar'}
+    # 사용자가 프로크리에이트에서 잘라낸 머리 다발 자리(strands/hole.png)를 결 방향 띠로 나눠 다발 레이어로
+    STRANDS = []
+    hp = ROOT / 'work/celeste/strands/hole.png'
+    if hp.exists():
+        hole = (cv2.imread(str(hp), 0) > 127).astype(np.uint8)
+        n_, hl, st_, _ = cv2.connectedComponentsWithStats(hole)
+        idx = 0
+        for ci in sorted(range(1, n_), key=lambda i: st_[i, 0]):
+            if st_[ci, 4] < 1500:
+                continue
+            C = hl == ci
+            K = 1 if st_[ci, 4] < 20000 else (4 if st_[ci, 2] > 380 else 3)
+            rows = np.where(C.any(axis=1))[0]
+            Lx = np.full(H, np.nan); Rx = np.full(H, np.nan)
+            for y in rows:
+                xs_ = np.where(C[y])[0]; Lx[y], Rx[y] = xs_.min(), xs_.max()
+            ok = ~np.isnan(Lx)
+            for arr in (Lx, Rx):                       # 줄마다 튀는 경계를 매끄럽게
+                v = np.interp(np.arange(H), np.where(ok)[0], arr[ok])
+                arr[:] = np.convolve(np.pad(v, 30, mode='edge'), np.ones(61) / 61, 'valid')
+            u = (np.arange(W)[None, :] - Lx[:, None]) / np.maximum(Rx - Lx, 8)[:, None]
+            Cs = cv2.GaussianBlur(C.astype(np.float32), (0, 0), 1.0)
+            for k in range(K):
+                lo, hi = k / K, (k + 1) / K
+                wk = np.ones_like(u) if K == 1 else (sm_np(lo - .05, lo + .05, u) if k > 0 else 1) * (1 - sm_np(hi - .05, hi + .05, u) if k < K - 1 else 1)
+                a_ = (Cs * wk * oa).astype(np.float32)
+                if a_.sum() < 500:
+                    continue
+                name = f'strand{idx:02d}'; idx += 1
+                L[name] = [orig.copy(), a_]
+                ys_ = np.where(a_.max(axis=1) > .3)[0]
+                xs_ = np.where(a_[ys_[0]:ys_[0] + 40].max(axis=0) > .3)[0]
+                STRANDS.append((name, [int(xs_.mean()), int(ys_[0])], int(ys_[-1] - ys_[0])))
+        # 다발 자리에서 머리(앞머리) 레이어는 빼고, 뒤에는 어두운 머리색 받침을 깐다
+        hsoft = cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 1.5)
+        L['front_hair'][1] = L['front_hair'][1] * (1 - hsoft)
+        back = cv2.dilate(hole, np.ones((31, 31), np.uint8)).astype(np.float32)
+        bh = L['back_hair']
+        fill = cv2.GaussianBlur(orig * hole[..., None], (0, 0), 25) / np.maximum(cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 25), 1e-3)[..., None]
+        need = back * (bh[1] < .6) * (yy < RAIL_Y) * (oa > .3)
+        bh[0] = np.where(need[..., None] > 0, fill * .55, bh[0]); bh[1] = np.maximum(bh[1], need * .98)
+        at = order.index('front_hair')
+        for name, _, _ in STRANDS:
+            order.insert(at, name); at += 1
+            GROUP[name] = 'strand'
+
+    MOVING = {'front_hair', 'back_hair', 'irides-l', 'irides-r', 'earMoon', 'earStar'} | {n for n, _, _ in STRANDS}
     # 위에서부터: 보이는 만큼 원화 색으로, 가려진 곳은 AI 그림을 원화 색에 맞춰 보정.
     # 단, 움직이는 레이어 바로 밑은 원화를 찍지 않고 AI 그림을 둔다 (움직이면 드러나는 자리)
     remain = np.ones((H, W), np.float32)
@@ -173,6 +224,9 @@ def main():
         meta['order'].append(n)
         meta['layers'][n] = {'xy': [int(x0), int(y0)], 'size': [int(x1 - x0), int(y1 - y0)], 'group': GROUP.get(n, 'body')}
         rest_check = rest_check * (1 - a[..., None]) + rgb * a[..., None]
+    for name, root, length in STRANDS:
+        if name in meta['layers']:
+            meta['layers'][name]['root'] = root; meta['layers'][name]['len'] = length
     (OUT / 'rig.json').write_text(json.dumps(meta, indent=1))
     src = orig * oa[..., None] + 236 * (1 - oa[..., None])
     diff = np.abs(rest_check - src).mean(axis=2)
