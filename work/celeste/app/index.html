@@ -740,7 +740,7 @@ function fit(){
   const fw = IW*sc, fh = IH*sc, top = H - BOT*sc;
   Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
   FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};
-  if(rig) rig.motion = clamp(.5/sc, 1, 2.4);        // 작게 그려질수록 움직임을 키운다(리깅은 0.5배 크기에서 맞춤)   // 화면(앱) 좌표의 원화 위치
+  if(rig) rig.motion = clamp(.32/sc, 1, 1.4);       // 작게 그려질 땐 좌우 움직임만 조금 키운다(너무 크면 인위적)   // 화면(앱) 좌표의 원화 위치
   clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
 }
 addEventListener('resize', fit); addEventListener('orientationchange', ()=>setTimeout(fit, 300)); addEventListener('pageshow', fit);
