@@ -276,7 +276,7 @@ window.CelesteRig = async function(cv, opt = {}){
       else { [x0, y0] = PARTS.patches[n]; w = imgs[n].naturalWidth; h = imgs[n].naturalHeight; }
       const g = RIG.layers[n]?.group;
       const hair = g === 'hairBack' || g === 'strand' || g === 'underHair';
-      if(g === 'strand'){ const Ld = RIG.layers[n]; STR[n] = {root:Ld.root, len:Ld.len, c:chain(8), ph:0, gain:5.5, air:Ld.root[0] < FACE_X ? 1 : -.8, side:Ld.root[0] < FACE_X ? 'L' : 'R'}; }
+      if(g === 'strand'){ const Ld = RIG.layers[n]; STR[n] = {root:Ld.root, len:Ld.len, c:chain(8), ph:0, gain:Ld.soft ? 1.1 : 5.5, air:Ld.soft ? 0 : Ld.root[0] < FACE_X ? 1 : -.8, /* soft = 회색·파란 안쪽 머리: 고개 돌릴 때만 살짝 */ side:Ld.root[0] < FACE_X ? 'L' : 'R'}; }
       const bend = n === 'neck' || g === 'body';
       M[n] = mesh(n, x0, y0, w, h, hair ? 14 : bend ? 4 : 1, hair ? 64 : bend ? 24 : 1);   // 머리카락(과 목)만 그물, 나머지는 사각형 하나(휘지 않음)
       if(!RIG.layers[n]) M[n].group = 'patch';

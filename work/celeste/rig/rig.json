@@ -25,8 +25,11 @@
   "irides-r",
   "irides-l",
   "eyelash-l",
+  "strand00b",
   "strand00",
+  "strand01b",
   "strand01",
+  "strand02b",
   "strand02",
   "earMoon",
   "earStar",
@@ -344,6 +347,57 @@
     1006
    ],
    "group": "underHair"
+  },
+  "strand00b": {
+   "xy": [
+    27,
+    1384
+   ],
+   "size": [
+    115,
+    219
+   ],
+   "group": "strand",
+   "root": [
+    128,
+    1377
+   ],
+   "len": 284,
+   "soft": 1
+  },
+  "strand01b": {
+   "xy": [
+    170,
+    600
+   ],
+   "size": [
+    410,
+    926
+   ],
+   "group": "strand",
+   "root": [
+    336,
+    598
+   ],
+   "len": 928,
+   "soft": 1
+  },
+  "strand02b": {
+   "xy": [
+    733,
+    534
+   ],
+   "size": [
+    313,
+    981
+   ],
+   "group": "strand",
+   "root": [
+    765,
+    533
+   ],
+   "len": 986,
+   "soft": 1
   }
  }
 }
