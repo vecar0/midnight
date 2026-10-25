@@ -33,6 +33,8 @@ s = s.replace('<title>Bleu Minuit</title>', '<title>Bleu Minuit</title>\n<link r
               '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<link rel="icon" href="icon-192.png">\n'
               '<meta name="apple-mobile-web-app-title" content="Bleu Minuit">')
 (DST / 'index.html').write_text(s)
+for f in ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png']:                 # 앱 아이콘(work/celeste/app/icons)
+    shutil.copy(SRC / f'app/icons/{f}', DST / f)
 files += ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
 
 # 캐시 버전 +1 (안 올리면 이미 설치된 홈 화면 앱이 옛 그림을 계속 쓴다)
