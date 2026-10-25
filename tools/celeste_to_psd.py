@@ -70,14 +70,13 @@ for n in ('rest', 'under'):
     clean_body = Image.alpha_composite(below(full(n), 2040), clean_body)
 clean_face = merge(['ears-l', 'ears-r', 'face', 'mouth', 'nose', 'eyebrow-r', 'eyebrow-l',
                     'eyelash-r', 'eyewhite-r', 'eyewhite-l', 'irides-r', 'irides-l', 'eyelash-l'])
+# 결 따라 자르기: 다발 개수 자유. 레이어 순서가 앞뒤 (BODY 아래 = 등 뒤, FACE 위 = 얼굴 앞)
 save(ROOT / 'work/celeste/procreate/celeste_hair_cut.psd', [
-    ('BODY (do not edit)', clean_body),
-    ('HAIR BACK', empty()),
+    ('HAIR BEHIND 01', empty()),
+    ('BODY (erase hair OK)', clean_body),
     ('FACE (do not edit)', clean_face),
     ('EARRINGS (do not edit)', layers[3][1]),
-    ('HAIR SIDE R', empty()),
-    ('HAIR SIDE L', empty()),
-    ('HAIR FRONT', empty()),
+    ('HAIR FRONT 01', empty()),
     ('CUT FROM HERE (original)', src),
 ], ref_visible=True)
 save(ROOT / 'work/celeste/procreate/celeste_hair.psd', layers)
