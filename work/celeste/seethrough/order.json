@@ -1,0 +1,26 @@
+{
+ "order_bottom_to_top": [
+  "handwear-l",
+  "back_hair",
+  "neck",
+  "topwear",
+  "ears-l",
+  "ears-r",
+  "face",
+  "mouth",
+  "nose",
+  "handwear-r",
+  "earwear",
+  "eyebrow-r",
+  "eyebrow-l",
+  "eyelash-r",
+  "eyewhite-r",
+  "eyewhite-l",
+  "irides-r",
+  "irides-l",
+  "eyelash-l",
+  "front_hair"
+ ],
+ "canvas": 1024,
+ "source": "seethrough_input.png (1520 square) scaled to 1024"
+}
