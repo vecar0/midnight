@@ -89,13 +89,46 @@ def main():
         if n in L and n != 'rest':
             L[n][1] = L[n][1] * (1 - (yy >= RAIL_Y + 40))
 
-    # 위에서부터: 보이는 만큼 원화 색으로, 가려진 곳은 AI 그림을 원화 색에 맞춰 보정
+    # 움직이는 레이어가 원화의 눈동자·머리카락을 빠짐없이 덮도록 넓힌다
+    #  (덜 덮으면 남은 원화 조각이 아래 레이어에 찍혀, 움직일 때 두 겹으로 보인다)
+    for side in ('l', 'r'):
+        ir, ew = L[f'irides-{side}'], L[f'eyewhite-{side}']
+        inside = cv2.dilate((ew[1] > .3).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+        notwhite = (orig.min(axis=2) < 175) | (np.abs(hsv[..., 0].astype(int) - 118) < 25) & (hsv[..., 1] > 40)
+        # 흰자 안의 어두운/파란 덩어리 중 AI 눈동자와 이어진 것만 (속눈썹 그림자는 빼기)
+        cand = (inside & notwhite).astype(np.uint8)
+        n_, lab = cv2.connectedComponents(cand)
+        keep = set(np.unique(lab[(ir[1] > .3) & (cand > 0)])) - {0}
+        extra = np.isin(lab, list(keep)) & (ir[1] < .5)
+        ir[0] = np.where(extra[..., None], orig, ir[0]); ir[1] = np.maximum(ir[1], extra * oa)
+    # 원화에서 머리카락으로 이어진 픽셀은 전부 머리 레이어로 (옷·밑판에 찍히면 흔들릴 때 두 겹)
+    fh, bh = L['front_hair'], L['back_hair']
+    hair_union = ((fh[1] > .3) | (bh[1] > .3)).astype(np.uint8)
+    cand = (hairish & (oa > .5) & (yy < RAIL_Y)).astype(np.uint8)
+    cand = cv2.morphologyEx(cand, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    n_, lab = cv2.connectedComponents(cand)
+    touch = set(np.unique(lab[(cv2.dilate(hair_union, np.ones((7, 7), np.uint8)) > 0) & (cand > 0)])) - {0}
+    allhair = np.isin(lab, list(touch))
+    # 옷(뷔스티에 광택·시스루 소매)의 어두운 부분은 머리가 아니다: 몸통 레이어가 덮는 넓은 덩어리는 제외
+    body_core = cv2.erode(((L['topwear'][1] > .5) | (L['handwear-r'][1] > .5)).astype(np.uint8), np.ones((25, 25), np.uint8)) > 0
+    allhair &= ~(body_core & ~(cv2.dilate(hair_union, np.ones((15, 15), np.uint8)) > 0))
+    to_front = allhair & (cv2.dilate((fh[1] > .3).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0) & (fh[1] < .5)
+    to_back = allhair & ~to_front & (fh[1] < .3) & (bh[1] < .5)
+    fh[0] = np.where(to_front[..., None], orig, fh[0]); fh[1] = np.maximum(fh[1], to_front * oa)
+    bh[0] = np.where(to_back[..., None], orig, bh[0]); bh[1] = np.maximum(bh[1], to_back * oa)
+
+    MOVING = {'front_hair', 'back_hair', 'irides-l', 'irides-r', 'earMoon', 'earStar'}
+    # 위에서부터: 보이는 만큼 원화 색으로, 가려진 곳은 AI 그림을 원화 색에 맞춰 보정.
+    # 단, 움직이는 레이어 바로 밑은 원화를 찍지 않고 AI 그림을 둔다 (움직이면 드러나는 자리)
     remain = np.ones((H, W), np.float32)
+    under_moving = np.zeros((H, W), np.float32)
     for n in reversed(order):
         rgb, a = L[n]
         vis = a * remain
         w = np.clip(vis * 2.5, 0, 1)
-        own = (vis > .8) & (a > .9)
+        if n not in MOVING and n not in ('rest', 'under'):
+            w = w * (1 - under_moving)
+        own = (vis > .8) & (a > .9) & (under_moving < .1)
         if own.sum() > 200 and n != 'rest':                   # 채널마다 gen→orig 직선 맞춤
             for c in range(3):
                 g, o = rgb[..., c][own], orig[..., c][own]
@@ -104,6 +137,8 @@ def main():
         rgb = rgb * (1 - w[..., None]) + orig * w[..., None]
         a = a * (1 - w) + oa * w * (a > .02)                   # 보이는 가장자리는 원화 윤곽을 따른다
         L[n] = [rgb, a]
+        if n in MOVING:
+            under_moving = np.maximum(under_moving, cv2.GaussianBlur((a > .15).astype(np.float32), (0, 0), 1.2))
         remain *= 1 - L[n][1]
 
     # 'rest' 중 머리 쪽 조각은 고개와 같이 움직이게 따로 (고정해 두면 고개만 움직일 때 떨어져 보인다)
@@ -113,7 +148,8 @@ def main():
     L['rest'] = [rgb, a * (1 - headw)]
     order.insert(order.index('back_hair') + 1, 'restHead')
     # 맨 아래 밑판: 몸통 쪽 원화만 (머리까지 깔면 고개가 움직일 때 원래 머리 윤곽이 뒤에 겹쳐 보인다)
-    L['under'] = [orig.copy(), oa * .995 * (1 - headw)]
+    hairzone = cv2.GaussianBlur(cv2.dilate((under_moving > .1).astype(np.uint8), np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
+    L['under'] = [orig.copy(), oa * .995 * (1 - headw) * (1 - hairzone)]
     order.insert(0, 'under')
     GROUP['under'] = 'static'
 
