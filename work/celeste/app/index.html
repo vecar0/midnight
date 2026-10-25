@@ -716,13 +716,13 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode 
 /* ═══ 무대 맞추기 ═══ */
 // 아이폰 홈 화면 앱은 innerHeight를 짧게 주는 경우가 있어 화면 높이를 쓴다
 function appH(){
-  const sa = navigator.standalone || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
-  if(!appH.p){ appH.p = document.createElement('div'); appH.p.style.cssText = 'position:fixed;top:0;width:0;height:100vh;height:100lvh;visibility:hidden'; document.body.appendChild(appH.p); }
-  const probe = appH.p;
-  let h = Math.max(innerHeight, document.documentElement.clientHeight, probe.offsetHeight || 0);
-  const sh = innerWidth > innerHeight ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
-  if(sa && sh > h && sh - h < 160) h = sh;                                              // 홈 화면 앱: 화면 전체 높이
-  return h;
+  // 사파리: 주소창·도구막대를 뺀 실제로 보이는 높이(innerHeight)
+  // 홈 화면 앱: iOS가 innerHeight를 상태 표시줄만큼 짧게 줌 → 화면 높이로. 홈 화면 앱 판정은 위쪽 안전 영역(상태 표시줄 밑으로 그림)으로도 한다
+  if(!appH.p){ appH.p = document.createElement('div'); appH.p.style.cssText = 'position:fixed;top:0;left:0;width:0;padding-top:env(safe-area-inset-top);visibility:hidden'; document.body.appendChild(appH.p); }
+  const safeTop = appH.p.offsetHeight || 0;
+  const sa = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || safeTop > 20;
+  const h = innerHeight, sh = innerWidth > innerHeight ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+  return sa && sh > h && sh - h < 160 ? sh : h;
 }
 function fit(){
   // 아이폰 홈 화면 앱은 웹 화면 높이를 상태 표시줄만큼 짧게 준다 → 문서 전체(html·body·앱)를 화면 높이로 늘린다
