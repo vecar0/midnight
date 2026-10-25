@@ -285,7 +285,7 @@ function draw(t, stage){
   const sl = document.getElementById('stage'), sv = document.getElementById('sv');
   document.getElementById('ex').onchange = e=>{ EXPR = e.target.value; };
   // 캡처용: 시간·단계·표정·손가락 위치를 지정해서 한 프레임
-  window.renderAt = (t, s, ex, ptr, tap)=>{ EXPR = ex || ''; if(ptr) S.pointer = {x:ptr[0], y:ptr[1], t:performance.now()}; if(tap){ S.react = 1; S.head.vy -= 60; } draw(t, s); return cv.toDataURL('image/png'); };
+  window.renderAt = (t, s, ex, ptr, tap)=>{ EXPR = ex || ''; if(ptr) S.pointer = {x:ptr[0], y:ptr[1], t:performance.now()}; if(tap){ S.react = 1; S.head.vy -= 20; } draw(t, s); return cv.toDataURL('image/png'); };
   window.seed = s=>{ let x = s; Math.random = ()=>((x = (x*16807) % 2147483647) / 2147483647); };
   window.ready = true;
   if(location.hash === '#still') return;
