@@ -151,6 +151,23 @@
   #planAdd span{font-size:12px;color:#555}
   #planAdd button{background:var(--ink);color:#fff;padding:7px 12px;font-size:13px}
   #plan.past #planAdd,#plan.past .it .x{display:none}
+  #pre{position:fixed;inset:0;z-index:31;background:#12121299;display:grid;place-items:center;padding:16px}
+  #pre[hidden]{display:none}
+  #pre .pc{width:min(380px,100%);max-height:90%;overflow:auto;background:var(--paper2);outline:1px solid var(--ink);box-shadow:6px 6px 0 var(--bleu);padding:16px 16px 14px}
+  #pre small{font:600 9px var(--sans);letter-spacing:.34em;color:var(--bleu)}
+  #pre b{display:block;font:400 22px var(--serif);margin:2px 0 6px}
+  #pre p{margin:0 0 10px;font:11px/1.5 'American Typewriter','Courier New',monospace;color:#555}
+  #preList .it{display:grid;grid-template-columns:1fr 26px;align-items:center;padding:7px 0;border-bottom:1px dashed #0002;font-size:14px}
+  #preList .it::before{content:"☐ ";color:var(--grey)}
+  #preList .it{grid-template-columns:auto 1fr 26px;gap:6px}
+  #preList button{font-size:16px;color:var(--grey)}
+  #preAdd{display:flex;gap:6px;margin-top:8px}
+  #preAdd input{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);font:16px var(--sans);padding:5px 0;background:none;border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
+  #preAdd button{background:var(--ink);color:#fff;padding:7px 12px;font-size:13px}
+  #pre .pb{display:flex;gap:8px;margin-top:14px}
+  #pre .pb button{height:44px;border:1px solid var(--ink);background:#fff;flex:1;letter-spacing:.1em}
+  #preGo{background:var(--bleu)!important;color:#fff;border-color:var(--bleu)!important;flex:2!important}
+  #preGo:disabled{opacity:.35}
   #calClose{display:block;width:100%;margin-top:16px;height:46px;border:1px solid var(--ink);background:#fff;letter-spacing:.2em}
   #recent button.ok{color:#888;border-color:var(--bleu);text-decoration:line-through;text-decoration-color:var(--bleu)}
   #recent button.add{border-style:dashed}
@@ -194,6 +211,16 @@
   </footer>
 </div>
 <div id="toast"></div>
+<section id="pre" hidden>
+  <div class="pc">
+    <small>AVANT MINUIT</small>
+    <b>오늘의 체크리스트</b>
+    <p>시작하기 전에 오늘 할 일을 적어요. 전부 체크한 날에만 콜라주 조각이 붙어요.</p>
+    <div id="preList"></div>
+    <form id="preAdd" autocomplete="off"><input id="preIn" placeholder="할 일 (예: 수학 문제집 3장)" maxlength="30" enterkeyhint="done"><button type="submit">추가</button></form>
+    <div class="pb"><button id="preCancel" type="button">닫기</button><button id="preGo" type="button" disabled>이대로 시작</button></div>
+  </div>
+</section>
 <section id="cal" hidden>
   <div class="ch"><button id="calPrev" type="button">‹</button><div><small>CALENDRIER</small><b id="calTitle"></b></div><button id="calNext" type="button">›</button></div>
   <div id="calNote"></div>
@@ -525,7 +552,8 @@ for(const k in plans) plans[k] = plans[k].map(it=>it.t != null ? it : {t:it.s, d
 const savePlans = () => { try{ localStorage.setItem('bleu.plan', JSON.stringify(plans)); }catch(e){} };
 const saveStamps = () => { try{ localStorage.setItem('bleu.cal', JSON.stringify(stamps)); }catch(e){} };
 const isFuture = k => +dateOf(k) > +dateOf(keyOf());
-const dayDone = k => { const p = plans[k]; return !!(p && p.length && p.every(it=>it.d)); };
+const focusedDay = k => { const t0 = +dateOf(k), t1 = t0 + 864e5; return rec.sessions.some(x=>x.done && x.t >= t0 && x.t < t1); };
+const dayDone = k => { const p = plans[k]; return !!(p && p.length && p.every(it=>it.d) && focusedDay(k)); };   // 미리 적은 할 일을 전부 + 그날 집중을 한 번 이상
 function checkStamp(k){
   if(isFuture(k)) return;
   if(!dayDone(k)){ if(stamps[k]){ delete stamps[k]; saveStamps(); } return; }     // 체크를 풀면 조각도 떼어진다
@@ -570,7 +598,7 @@ function paintCal(){
     } else { const mc = smallMoon(moonAge(new Date(y, m, d, 21))); mc.className = 'm'; el.appendChild(mc); }
     grid.appendChild(el);
   }
-  $('calNote').textContent = (filled ? '이번 달 콜라주 ' + filled + '조각 · ' : '') + '할 일을 다 체크한 날엔 콜라주 조각이 붙어요';
+  $('calNote').textContent = (filled ? '이번 달 콜라주 ' + filled + '조각 · ' : '') + '미리 적은 할 일을 다 체크하고 한 번 이상 집중한 날엔 콜라주 조각이 붙어요';
   paintPlan();
 }
 function paintPlan(){
@@ -582,6 +610,16 @@ function paintPlan(){
     : '<div class="none">' + (past ? '할 일이 없던 날이에요' : '할 일을 적어 두고 하나씩 체크해요') + '</div>';
 }
 $('date').onclick = ()=>openCal();
+function openPre(){ $('pre').hidden = false; paintPre(); setTimeout(()=>$('preIn').focus(), 50); }
+function paintPre(){ const list = plans[keyOf()] || [];
+  $('preList').innerHTML = list.map((it, i)=>'<div class="it"><span>' + esc(it.t) + '</span><button type="button" data-i="' + i + '" aria-label="지우기">×</button></div>').join('');
+  $('preGo').disabled = !list.length; }
+$('preAdd').onsubmit = e=>{ e.preventDefault(); const t = $('preIn').value.trim(); if(!t) return;
+  (plans[keyOf()] = plans[keyOf()] || []).push({t, d:false}); savePlans(); $('preIn').value = ''; paintPre(); paintStats(); };
+$('preList').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; const k = keyOf();
+  plans[k].splice(+b.dataset.i, 1); if(!plans[k].length) delete plans[k]; savePlans(); paintPre(); paintStats(); };
+$('preCancel').onclick = ()=>{ $('pre').hidden = true; $('preIn').blur(); };
+$('preGo').onclick = ()=>{ $('pre').hidden = true; $('preIn').blur(); start(); };
 $('calClose').onclick = ()=>{ $('cal').hidden = true; paintStats(); };
 $('calPrev').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() - 1); paintCal(); };
 $('calNext').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() + 1); paintCal(); };
@@ -660,7 +698,7 @@ function phaseEnd(){
   clearInterval(tid);
   if(phase === 'focus'){
     focusEndAt = Date.now(); setTimeout(paint, 2700);
-    rounds++; rec.done++; rec.best = Math.max(rec.best, mins()); commit(true); $('subject').disabled = false;
+    rounds++; rec.done++; setTimeout(()=>checkStamp(keyOf()), 0); rec.best = Math.max(rec.best, mins()); commit(true); $('subject').disabled = false;
     if(rounds >= ROUNDS){                                // 세트 완주: 색을 다 되찾고 긴 휴식
       tone([523.25, 659.25, 783.99, 1046.5], 1.4); if(rig) rig.expr = 'smile'; doves(); toast('Bleu Minuit', 3000);
       runPhase('long'); mode = 'run'; return;
@@ -679,6 +717,7 @@ function start(){                                        // 큰 버튼
   if(mode === 'run'){ remain = 0; phaseEnd(); return; }   // 휴식 건너뛰기
   if(mode === 'paused'){ mode = 'run'; endAt = Date.now() + remain*1000; clearInterval(tid); tid = setInterval(tickOnce, 1000); keepAwake(true);
     setGo('잠시 멈춤', true); setStatus(cur.s + ' · 집중 ' + (rounds + 1) + '/' + ROUNDS); paint(); return; }
+  if((mode === 'idle' || mode === 'finished') && !(plans[keyOf()] || []).length){ openPre(); return; }   // 시작 전에 오늘 체크리스트부터
   if(mode === 'idle' || mode === 'finished'){ rounds = 0; if(rig) rig.expr = ''; }
   runPhase('focus');
 }
