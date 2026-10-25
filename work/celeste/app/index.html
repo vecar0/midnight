@@ -17,7 +17,7 @@
   html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:14px/1.4 var(--sans);overflow:hidden;
     -webkit-user-select:none;user-select:none;overscroll-behavior:none}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
-  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+  #app{position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;
     padding:env(safe-area-inset-top) 0 0;
     background:
       radial-gradient(120% 60% at 50% 45%, #f6f5f1 0, transparent 70%),
@@ -720,12 +720,14 @@ function appH(){
   if(!appH.p){ appH.p = document.createElement('div'); appH.p.style.cssText = 'position:fixed;top:0;width:0;height:100vh;height:100lvh;visibility:hidden'; document.body.appendChild(appH.p); }
   const probe = appH.p;
   let h = Math.max(innerHeight, document.documentElement.clientHeight, probe.offsetHeight || 0);
-  if(sa && Math.abs(screen.width - innerWidth) < 2) h = Math.max(h, screen.height);      // 세로 홈 화면 앱
-  if(sa && Math.abs(screen.height - innerWidth) < 2) h = Math.max(h, screen.width);      // 가로 홈 화면 앱
+  const sh = innerWidth > innerHeight ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
+  if(sa && sh > h && sh - h < 160) h = sh;                                              // 홈 화면 앱: 화면 전체 높이
   return h;
 }
 function fit(){
-  $('app').style.height = appH() + 'px';
+  // 아이폰 홈 화면 앱은 웹 화면 높이를 상태 표시줄만큼 짧게 준다 → 문서 전체(html·body·앱)를 화면 높이로 늘린다
+  const h = appH() + 'px';
+  for(const el of [document.documentElement, document.body, $('app')]){ el.style.height = h; el.style.minHeight = h; }
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
   const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? .9 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
