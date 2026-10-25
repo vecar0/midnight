@@ -22,6 +22,7 @@ SQ = 1520                    # seethrough_input.png 크기
 OX, OY = 146, 620            # 입력 그림 좌표 → 원화 좌표: x - OX, y + OY
 FACE_X = 650                 # 얼굴 가운데 x (귀걸이 좌우 나누기)
 RAIL_Y = 2040                # 이 아래는 난간·허리 (움직이지 않는 레이어)
+BEAD_BOXES = [(841, 998, 860, 1038)]   # 별 귀걸이 아래 구슬 (반 크기 좌표)
 NECK_Y = 1130                # 이 위는 머리 (고개와 같이 움직임)
 
 # 레이어별 무리: 리깅에서 같이 움직이는 단위
@@ -261,6 +262,47 @@ def main():
             uw[fy0:fy1, fx0:fx1] = uw[fy0:fy1, fx0:fx1] * (1 - kk) + ew * kk
             ua_[fy0:fy1, fx0:fx1] = np.maximum(ua_[fy0:fy1, fx0:fx1], kk[..., 0])
             print('귀걸이 자리 편집본 정렬 점', len(gd))
+            # 원화와 귀걸이 없는 그림이 크게 다른 곳 = 귀걸이 전체(아래 구슬까지) → 귀걸이 레이어에 보탠다
+            near = cv2.dilate(earm[fy0:fy1, fx0:fx1], np.ones((61, 61), np.uint8)) > 0
+            df = np.abs(orig[fy0:fy1, fx0:fx1] - ew).max(axis=2)
+            silverish = (cv2.cvtColor(orig[fy0:fy1, fx0:fx1].astype(np.uint8), cv2.COLOR_BGR2HSV)[..., 1] < 90)
+            near_s = cv2.dilate(earm[fy0:fy1, fx0:fx1], np.ones((31, 31), np.uint8)) > 0
+            right = (np.arange(fx0, fx1)[None, :] >= FACE_X)
+            extra = ((df > 60) & ((near & silverish) | (near_s & right))).astype(np.uint8)   # 별 쪽은 파란 구슬까지
+            extra = cv2.morphologyEx(extra, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+            n_e, lab_e = cv2.connectedComponents(cv2.dilate(extra, np.ones((3, 3), np.uint8)))
+            touch = set(np.unique(lab_e[cv2.dilate(earm[fy0:fy1, fx0:fx1], np.ones((9, 9), np.uint8)) > 0])) - {0}
+            extra = (np.isin(lab_e, list(touch)) & (extra > 0)).astype(np.float32)
+            for en in ('earMoon', 'earStar'):
+                Le = meta['layers'][en]; ex, ey = Le['xy']; ewd, eh = Le['size']
+                cur = np.zeros((H, W, 4), np.float32)
+                cur[ey:ey + eh, ex:ex + ewd] = cv2.imread(str(OUT / f'{en}.webp'), cv2.IMREAD_UNCHANGED)
+                side = (np.arange(W)[None, :] < FACE_X) if en == 'earMoon' else (np.arange(W)[None, :] >= FACE_X)
+                add = np.zeros((H, W), np.float32); add[fy0:fy1, fx0:fx1] = extra
+                add = cv2.GaussianBlur(add, (0, 0), .7) * side * oa
+                cur[..., :3] = np.where((add > cur[..., 3] / 255)[..., None], orig, cur[..., :3])
+                cur[..., 3] = np.maximum(cur[..., 3], add * 255)
+                ys_, xs_ = np.where(cur[..., 3] > 2); a0, a1, b0, b1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
+                cv2.imwrite(str(OUT / f'{en}.webp'), cur[b0:b1, a0:a1].clip(0, 255).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
+                Le['xy'] = [int(a0), int(b0)]; Le['size'] = [int(a1 - a0), int(b1 - b0)]
+                earm = np.maximum(earm, (cur[..., 3] > 25).astype(np.uint8))
+        # 별 귀걸이 아래 구슬: 편집본에도 남아 있어 직접 지정. 귀걸이 레이어로 옮기고 밑그림은 주변 머리로 메운다
+        bead = np.zeros((H, W), np.uint8)
+        for bx0, by0, bx1, by1 in BEAD_BOXES:
+            hsv_b = cv2.cvtColor(orig[by0:by1, bx0:bx1].astype(np.uint8), cv2.COLOR_BGR2HSV)
+            bead[by0:by1, bx0:bx1] = ((hsv_b[..., 2] > 130) & (hsv_b[..., 1] < 90)).astype(np.uint8)   # 흰 테두리만 (파란 머리 제외)
+        bead = cv2.dilate(bead, np.ones((3, 3), np.uint8))
+        if bead.any():
+            Le = meta['layers']['earStar']; ex, ey = Le['xy']; ewd, eh = Le['size']
+            cur = np.zeros((H, W, 4), np.float32); cur[ey:ey + eh, ex:ex + ewd] = cv2.imread(str(OUT / 'earStar.webp'), cv2.IMREAD_UNCHANGED)
+            ba = cv2.GaussianBlur(bead.astype(np.float32), (0, 0), .7)
+            cur[..., :3] = np.where((ba > cur[..., 3] / 255)[..., None], orig, cur[..., :3]); cur[..., 3] = np.maximum(cur[..., 3], ba * 255)
+            ys_, xs_ = np.where(cur[..., 3] > 2); a0, a1, b0, b1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
+            cv2.imwrite(str(OUT / 'earStar.webp'), cur[b0:b1, a0:a1].clip(0, 255).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
+            Le['xy'] = [int(a0), int(b0)]; Le['size'] = [int(a1 - a0), int(b1 - b0)]
+            bm = cv2.dilate(bead, np.ones((5, 5), np.uint8))
+            uw = cv2.inpaint(uw.clip(0, 255).astype(np.uint8), bm, 6, cv2.INPAINT_TELEA).astype(np.float32)
+            earm = np.maximum(earm, bead)
         reg = cv2.GaussianBlur(cv2.dilate(hole | earm, np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
         ar = (reg * ua_ * (yy < RAIL_Y)).astype(np.float32)
         ys_, xs_ = np.where(ar > .01); x0, x1, y0, y1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
@@ -275,8 +317,8 @@ def main():
                 continue
             Ld = meta['layers'][n]; x0, y0 = Ld['xy']; w, h = Ld['size']
             im = cv2.imread(str(OUT / f'{n}.webp'), cv2.IMREAD_UNCHANGED).astype(np.float32)
-            k_ = earw[y0:y0 + h, x0:x0 + w][..., None] * (im[..., 3:] > 10)
-            im[..., :3] = im[..., :3] * (1 - k_) + uw[y0:y0 + h, x0:x0 + w] * k_
+            # 덧칠하지 않고 비운다: 아래 밑그림(귀걸이 없는 그림)이 보이게
+            im[..., 3] *= 1 - earw[y0:y0 + h, x0:x0 + w]
             cv2.imwrite(str(OUT / f'{n}.webp'), im.clip(0, 255).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
         for e in ('earMoon', 'earStar'):
             meta['order'].remove(e)

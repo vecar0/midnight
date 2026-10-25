@@ -100,11 +100,14 @@ def import_pdf(path, name):
         border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
         bg = np.isin(lab, [i for i in range(1, n) if i in border or st[i, 4] > 600])   # 바탕 + 지워서 생긴 큰 빈자리
         keep = cv2.GaussianBlur(cv2.erode((~bg).astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), .8)
-        cur = full(m, name)
-        cur = np.array(cur).astype(np.float32); cur[..., 3] *= keep
-        c = Image.fromarray(cur.clip(0, 255).astype(np.uint8))
-        print(f'  {name}: 흰 바탕 PDF → 지운 자리만 반영 (남은 {int((cur[..., 3] > 30).sum())} px)')
+        # 색은 저장하지 않고 '남길 자리' 틀만 저장 → 레이어를 새로 만들 때마다 그 위에 다시 씌운다
+        OVR.mkdir(exist_ok=True)
+        (OVR / f'{name}.png').unlink(missing_ok=True)
+        Image.fromarray((keep * 255).astype(np.uint8), 'L').save(OVR / f'{name}.mask.png')
+        print(f'  {name}: 흰 바탕 PDF → 지운 자리 틀로 저장')
+        return
     OVR.mkdir(exist_ok=True)
+    (OVR / f'{name}.mask.png').unlink(missing_ok=True)
     c.save(OVR / f'{name}.png')
     print('PDF 들여옴:', name, Path(path).name)
 
@@ -115,9 +118,16 @@ def apply():
     m = meta()
     for p in sorted(OVR.glob('*.png')):
         n = p.stem
+        mask = n.endswith('.mask')
+        n = n[:-5] if mask else n
         if n not in m['layers']:
             continue
-        a = np.array(Image.open(p).convert('RGBA'))
+        if mask:                                   # 지금 레이어에 '남길 자리' 틀을 씌운다
+            a = np.array(full(m, n)).astype(np.float32)
+            a[..., 3] *= np.array(Image.open(p)).astype(np.float32) / 255
+            a = a.clip(0, 255).astype(np.uint8)
+        else:
+            a = np.array(Image.open(p).convert('RGBA'))
         ys, xs = np.where(a[..., 3] > 2)
         if len(xs) == 0:
             continue
