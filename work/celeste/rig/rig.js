@@ -16,7 +16,7 @@ window.CelesteRig = async function(cv, opt = {}){
     gaze:{x:0, y:0, tx:0, ty:0, next:0},                      // 눈동자
     blink:{t:-1, next:1.5, double:false},
     roll:{x:0, y:0, vx:0, vy:0, tx:0, next:0},              // 고개 기울기(라디안)
-    smile:0, frown:0, react:0, life:1,
+    smile:0, frown:0, react:0,
     torso:{x:0, y:0, vx:0, vy:0},                             // 상체: 고개를 조금 늦게, 조금만 따라온다
     breath:{ph:0, v:0},                                       // 숨: 들숨 짧고 날숨 길게, 박자도 조금씩 다르게
     wind:0, windT:0, windV:0,
@@ -45,57 +45,24 @@ window.CelesteRig = async function(cv, opt = {}){
   const VS = `attribute vec2 p, uv, ip; varying vec2 v, w; uniform vec2 res;
     void main(){ v = uv; w = ip; gl_Position = vec4(p.x/res.x*2.-1., 1.-p.y/res.y*2., 0., 1.); }`;
   const FS = `precision mediump float; varying vec2 v, w;     // v: 레이어 그림 좌표, w: 원화 좌표(쉬는 자세)
-    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha, plaster, crackOn, plasterOn; uniform vec2 ires; uniform vec3 stage;
-    // 석고: 몸에 붙은 좌표(w)로 만든 무늬라 리깅을 따라 움직인다
-    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)))*43758.5453); }
-    float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
-      return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), f.x), f.y); }
-    float fbm(vec2 p){ return vnoise(p)*.55 + vnoise(p*2.1 + 3.7)*.3 + vnoise(p*4.3 + 9.1)*.15; }
-    float crackLine(vec2 p, vec2 o, float ang, float len, float sd, float wd){   // 원화 픽셀 좌표의 구불구불한 금 한 줄
-      vec2 d = vec2(cos(ang), sin(ang)), r = p - o; float t = dot(r, d), sv = dot(r, vec2(-d.y, d.x));
-      if(t < 0. || t > len) return 0.;
-      float off = (vnoise(vec2(t*.03, sd)) - .5)*9. + (vnoise(vec2(t*.13, sd + 3.)) - .5)*2.2;   // 크게 한 번 휘고 잔떨림은 조금
-      float hw = mix(wd, .6, t/len)*.5;                  // 끝으로 갈수록 가늘게
-      return 1. - smoothstep(hw, hw + .9, abs(sv - off)); }
-    float cracks(vec2 p){                                 // 눈 밑에서 뺨으로 흐르는 눈물 같은 금 + 두 손등(손가락 방향)
-      float k = crackLine(p, vec2(724., 878.), 1.55, 140., 1., 4.);
-      k = max(k, crackLine(p, vec2(722., 940.), 2.2, 36., 2., 2.2));
-      k = max(k, crackLine(p, vec2(722., 980.), 1.05, 30., 3., 1.8));
-      k = max(k, crackLine(p, vec2(910., 1736.), .38, 120., 5., 3.8));       // 오른손등
-      k = max(k, crackLine(p, vec2(975., 1762.), -.15, 34., 6., 2.));
-      k = max(k, crackLine(p, vec2(292., 1702.), 2.86, 110., 7., 3.6));      // 왼손등
-      k = max(k, crackLine(p, vec2(235., 1716.), 2.3, 30., 8., 1.8));
-      return k; }
+    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha; uniform vec3 stage;
     void main(){
       vec4 c = texture2D(img, v) * alpha;
       if(isIris > 0.){                                    // 눈동자는 흰자 밖으로 나가지 않게 흰자 모양으로 자른다
         vec2 e = (w + gaze - clipR.xy) / clipR.zw;
         float k = (e.x < 0. || e.y < 0. || e.x > 1. || e.y > 1.) ? 0. : texture2D(clipT, e).a;
         c *= k; }
-      if(c.a < .004){ gl_FragColor = vec4(0.); return; }
-      vec3 u = c.rgb / c.a;                                 // 미리 곱한 알파를 풀어서 계산
       vec3 m = texture2D(msk, w).rgb;                      // 단계별 색: r=손톱 g=머리 b=눈
       float g = max(max(m.r*(1.-stage.x), m.g*(1.-stage.y)), m.b*(1.-stage.z));
-      float l = dot(u, vec3(.299,.587,.114));
-      vec3 col = mix(u, vec3(l*1.05), g);
-      if(plaster < 1.){
-        // 석고 → 색: 진행할수록 고르게 색이 돌아온다. 얼굴·손의 파란 금은 끝무렵에 아물어 사라진다
-        float sat = max(max(u.r, u.g), u.b) - min(min(u.r, u.g), u.b);
-        float pl = (1. - smoothstep(0., .92, plaster)) * (plasterOn > 1.5 ? max(smoothstep(.5, .72, l)*(1. - smoothstep(.08, .2, sat)), m.r) : plasterOn);   // 옷·장신구는 제 색
-        vec3 P = mix(vec3(.42, .42, .41), vec3(.975, .968, .952), pow(l, .6));
-        col = mix(col, P, pl);
-        if(crackOn > 0.) col = mix(col, vec3(.118, .133, .84), cracks(w*ires)*(1. - smoothstep(.6, .97, plaster)));
-      }
-      gl_FragColor = vec4(col*c.a, c.a);
+      float l = dot(c.rgb, vec3(.299,.587,.114));
+      gl_FragColor = vec4(mix(c.rgb, vec3(l*1.05), g), c.a);
     }`;
   let U, M = {}, T = {}, ORDER = [];
-  // 석고가 덮이는 층: 1 = 전부(얼굴·머리카락·귀), 2 = 밝은 피부만(목·손 — 옷 부분은 제 색). 나머지(옷·장신구·난간)는 제 색
-  const PLASTER = {face:1, restHead:1, 'ears-l':1, 'ears-r':1, eyes_closed:1, mouth_smile:1, face_frown:1, neck:2, 'handwear-r':2};
   function program(){
     const sh = (t,s)=>{ const o = gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o);
       if(!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; };
     const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER,VS)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER,FS));
-    gl.linkProgram(p); if(!gl.getProgramParameter(p, gl.LINK_STATUS)) throw gl.getProgramInfoLog(p); gl.useProgram(p); return p;
+    gl.linkProgram(p); gl.useProgram(p); return p;
   }
   function mesh(name, x0, y0, w, h, nx, ny){
     const rest = [], uv = [], ip = [], idx = [];
@@ -129,12 +96,11 @@ window.CelesteRig = async function(cv, opt = {}){
     // 고개: 가끔 다른 곳을 본다. 손가락이 최근에 움직였으면 그쪽을 본다
     const pointing = S.pointer && Number.isFinite(S.pointer.x) && performance.now() - S.pointer.t < 2500;
     // 가만히 있어도 여러 느린 흔들림이 겹쳐 미세하게 움직이고, 가끔 천천히 다른 곳을 본다
-    const L = S.life;                                    // 생기 0.12(석고) ~ 1(완전히 살아남)
-    const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*L;
-    const idleY = Math.sin(t*.29 + 2)*.05*L;
+    const idleX = Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55;
+    const idleY = Math.sin(t*.29 + 2)*.05;
     let glance = false;
     if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -10, 10); H.ty = clamp((S.pointer.y - 880)/1500, -.15, .15); }
-    else if(t > H.next){ const look = Math.random() < .45*L*L; H.tx = look ? rnd(-9, 9) : rnd(-2, 2); H.ty = look ? rnd(-.12, .08) : 0; H.next = t + rnd(3, 7.5); glance = look; }
+    else if(t > H.next){ const look = Math.random() < .45; H.tx = look ? rnd(-9, 9) : rnd(-2, 2); H.ty = look ? rnd(-.12, .08) : 0; H.next = t + rnd(3, 7.5); glance = look; }
     spring(H, 7, H.tx + idleX + S.tilt.x*5, H.ty + idleY + S.tilt.y*.1, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
     // 상체는 고개의 1/4쯤을 늦게 따라온다 → 목이 덜 꺾인다
     spring(S.torso, 4, H.x*.33, 0, dt, 4);
@@ -187,7 +153,7 @@ window.CelesteRig = async function(cv, opt = {}){
       e.v += (-e.a*45/e.len + acc*30 - e.v*4.5)*dt; e.a += e.v*dt; e.a = clamp(e.a, -.12, .12);
     }
   }
-  function breathAt(){ return S.breath.v*(.25 + .75*S.life); }
+  function breathAt(){ return S.breath.v; }
 
   // ---------- 자세 ----------
   // 머리는 얼굴·이목구비·귀·귀걸이 고리·앞머리 뿌리를 한 덩어리로: 목을 축으로 살짝 기울고(roll) 옮겨진다.
@@ -242,10 +208,9 @@ window.CelesteRig = async function(cv, opt = {}){
   // ---------- 그리기 ----------
   function draw(t, stage){
     const dt = S.lastT == null ? 0 : clamp(t - S.lastT, 0, .05); S.lastT = t;
-    S.life += ((.12 + .88*sm(0, .9, stage)) - S.life)*Math.min(1, dt*1.5);
     if(dt > 0) for(let i=0;i<2;i++) simulate(t, dt/2);
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage)); gl.uniform1f(U.plaster, stage);
+    gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
     headXform(t); const b = breathAt(t);
     const B = S.blink, bt = B.t < 0 ? 1 : (t - B.t);
     const one = p=>p < .07 ? p/.07 : p < .11 ? 1 : p < .22 ? 1 - (p-.11)/.11 : 0;          // 감기 빠르게, 뜨기 천천히
@@ -266,7 +231,7 @@ window.CelesteRig = async function(cv, opt = {}){
       else if(g === 'iris') headRigid(m, S.gaze.x, S.gaze.y);
       else if(g === 'patch'){ headRigid(m); a = name === 'eyes_closed' ? closed : name === 'mouth_smile' ? S.smile : S.frown; if(a <= .001) continue; }
       else headRigid(m);                                                                      // 얼굴·이목구비·귀·머리 조각: 통째로
-      gl.uniform1f(U.alpha, a); gl.uniform1f(U.crackOn, name === 'face' || name === 'handwear-r' ? 1 : 0); gl.uniform1f(U.plasterOn, PLASTER[name] ?? (g === 'hairBack' || g === 'underHair' || g === 'strand' || g === 'hairFront' || g === 'feature' || g === 'eyewhite' || g === 'iris' ? 1 : 0));
+      gl.uniform1f(U.alpha, a);
       if(g === 'iris'){ const ew = RIG.layers[name.replace('irides', 'eyewhite')];
         gl.uniform1f(U.isIris, 1); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, T[name.replace('irides', 'eyewhite')]);
         gl.uniform4f(U.clipR, ew.xy[0]/IW, ew.xy[1]/IH, ew.size[0]/IW, ew.size[1]/IH); gl.uniform2f(U.gaze, S.gaze.x/IW, S.gaze.y/IH);
@@ -298,9 +263,9 @@ window.CelesteRig = async function(cv, opt = {}){
     const prog = program(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     U = {p:gl.getAttribLocation(prog,'p'), uv:gl.getAttribLocation(prog,'uv'), ip:gl.getAttribLocation(prog,'ip')};
     [U.p, U.uv, U.ip].forEach(a=>gl.enableVertexAttribArray(a));
-    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage','plaster','crackOn','ires','plasterOn']) U[n] = gl.getUniformLocation(prog,n);
+    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage']) U[n] = gl.getUniformLocation(prog,n);
     for(const n of ORDER) T[n] = tex(imgs[n], 0);
-    tex(imgs.mask, 1); gl.uniform1i(U.img, 0); gl.uniform1i(U.msk, 1); gl.uniform1i(U.clipT, 2); gl.uniform2f(U.res, IW, IH); gl.uniform2f(U.ires, IW, IH);
+    tex(imgs.mask, 1); gl.uniform1i(U.img, 0); gl.uniform1i(U.msk, 1); gl.uniform1i(U.clipT, 2); gl.uniform2f(U.res, IW, IH);
     for(const n of ORDER){
       let x0, y0, w, h;
       if(RIG.layers[n]){ [x0, y0] = RIG.layers[n].xy; [w, h] = RIG.layers[n].size; }
