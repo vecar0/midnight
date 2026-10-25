@@ -3,7 +3,7 @@
 
   python3 tools/celeste_to_psd.py
 입력  work/celeste/rig/*.webp, rig.json, work/celeste/parts/char.webp
-출력  work/celeste/procreate/celeste_hair.psd
+출력  work/celeste/procreate/celeste_hair.psd (지금 머리 레이어 포함), celeste_hair_cut.psd (머리를 원본에서 직접 자르는 용)
 """
 import json
 from pathlib import Path
@@ -34,7 +34,6 @@ def merge(names):
     return c
 
 
-psd = PSDImage.new('RGBA', (W, Y1 - Y0))
 layers = [   # 아래 → 위
     ('BODY (do not edit)', merge(['under', 'neck', 'topwear', 'rest', 'handwear-r'])),
     ('HAIR BACK', full('back_hair')),
@@ -46,13 +45,28 @@ layers = [   # 아래 → 위
     ('HAIR FRONT', full('front_hair')),
 ]
 src = Image.open(ROOT / 'work/celeste/parts/char.webp').convert('RGBA').crop((0, Y0, W, Y1))
-for name, im in layers:
-    psd.append(PixelLayer.frompil(im, psd, name))
-ref = PixelLayer.frompil(src, psd, 'ORIGINAL (reference)')
-ref.visible = False
-psd.append(ref)
-out = ROOT / 'work/celeste/procreate/celeste_hair.psd'
-psd.save(out)
-chk = PSDImage.open(out)
-print(out, round(out.stat().st_size / 1e6, 1), 'MB', [l.name for l in chk])
-chk.composite().convert('RGB').resize((W // 4, (Y1 - Y0) // 4)).save('/tmp/claude-0/-home-user-midnight/5b206ca0-e98c-5fce-a967-6674d5a729de/scratchpad/psd_check.png')
+
+
+def save(path, layers, ref_visible=False):
+    psd = PSDImage.new('RGBA', (W, Y1 - Y0))
+    for name, im in layers:
+        psd.append(PixelLayer.frompil(im, psd, name))
+    if not ref_visible:
+        ref = PixelLayer.frompil(src, psd, 'ORIGINAL (reference)'); ref.visible = False; psd.append(ref)
+    psd.save(path)
+    chk = PSDImage.open(path)
+    print(path.name, round(path.stat().st_size / 1e6, 1), 'MB', [l.name for l in chk])
+
+
+empty = lambda: Image.new('RGBA', (W, Y1 - Y0), (0, 0, 0, 0))
+save(ROOT / 'work/celeste/procreate/celeste_hair_cut.psd', [
+    ('BODY (do not edit)', layers[0][1]),
+    ('HAIR BACK', empty()),
+    ('FACE (do not edit)', layers[2][1]),
+    ('EARRINGS (do not edit)', layers[3][1]),
+    ('HAIR SIDE R', empty()),
+    ('HAIR SIDE L', empty()),
+    ('HAIR FRONT', empty()),
+    ('CUT FROM HERE (original)', src),
+], ref_visible=True)
+save(ROOT / 'work/celeste/procreate/celeste_hair.psd', layers)
