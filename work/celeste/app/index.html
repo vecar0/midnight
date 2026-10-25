@@ -26,44 +26,37 @@
 
   /* ── 위: 시간 ── */
   #top{position:relative;z-index:5;padding:14px 18px 0;display:grid;grid-template-columns:1fr auto;align-items:end;gap:4px 12px}
-  #brand{grid-column:1/3;position:relative;display:flex;justify-content:space-between;align-items:center;
-    font:italic 12px var(--serif);letter-spacing:.06em;color:#bdbdb8;background:var(--ink);padding:6px 10px;margin-bottom:12px}
-  #brand::after{content:"";position:absolute;left:12%;right:28%;top:100%;margin-top:4px;height:7px;background:#8a8a86}
-  #brand b{font:600 11px var(--sans);letter-spacing:.32em;color:#fff;font-style:normal}
-  #brand b i{color:#8b8ff5;font-style:normal}
-  #time{justify-self:start;font:400 clamp(54px,17vw,88px)/.95 var(--serif);letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;
-    margin-top:6px;background:var(--paper2);padding:4px 10px 2px;box-shadow:6px 6px 0 var(--bleu)}
+  #brand{grid-column:1/3;display:flex;justify-content:space-between;align-items:baseline;
+    font:italic 13px var(--serif);letter-spacing:.06em;color:var(--grey);border-bottom:1px solid var(--line);padding-bottom:6px}
+  #brand b{font:600 12px var(--sans);letter-spacing:.32em;color:var(--ink);font-style:normal}
+  #brand b i{color:var(--bleu);font-style:normal}
+  #time{font:400 clamp(58px,19vw,92px)/.95 var(--serif);letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;margin-top:6px}
   #time span{color:var(--bleu)}
-  #moonBox{position:relative;z-index:-1;display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px}
-  #moon{width:124px;height:124px;display:block;margin:-26px -16px -22px -10px}
-  #moonTxt{font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em;color:var(--ink);white-space:nowrap;background:#fff;padding:1px 5px;outline:1px solid var(--ink)}
-  #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--paper2);padding:4px 6px 4px 10px;outline:1px solid var(--ink)}
+  #moonBox{display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:8px}
+  #moon{width:54px;height:54px}
+  #moonTxt{font:10px var(--sans);letter-spacing:.12em;color:var(--grey);white-space:nowrap}
+  #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:2px}
   #subject{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);background:none;font:16px var(--sans);padding:6px 0;
     color:var(--ink);border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
   #subject::placeholder{color:var(--grey)}
   #presets{display:flex;gap:4px}
-  #presets button{min-width:46px;padding:0 5px;height:32px;border:1px solid var(--ink);background:#fff;font:15px var(--serif);display:flex;align-items:baseline;justify-content:center;white-space:nowrap}
+  #presets button{min-width:44px;padding:0 5px;height:32px;border:1px solid var(--ink);font:15px var(--serif);display:flex;align-items:baseline;justify-content:center;white-space:nowrap}
   #presets button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
-  #presets small{font-size:10px;opacity:.7}
-  #pomo{grid-column:1/3;display:flex;align-items:center;gap:5px;margin-top:10px;font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em}
-  #pomo i{width:9px;height:9px;border:1.3px solid var(--ink);border-radius:50%;background:var(--paper2)}
-  #pomo i.on{background:var(--bleu);border-color:var(--bleu)}
-  #pomo i.now{background:linear-gradient(90deg,var(--bleu) 50%,var(--paper2) 50%)}
-  #pomo span{margin-left:4px;background:var(--paper2);padding:1px 5px}
-  #time.rest{color:#666} #time.rest span{color:#666}
   #recent{grid-column:1/3;display:flex;gap:6px;overflow:hidden;height:22px;margin-top:4px}
-  #recent button{font-size:11px;color:var(--ink);background:var(--paper2);border:1px solid var(--line);padding:2px 8px;white-space:nowrap}
+  #recent button{font-size:11px;color:var(--grey);border:1px solid var(--line);padding:2px 8px;white-space:nowrap}
 
   /* ── 가운데: 무대 ── */
-  #stage{position:relative;z-index:1;flex:1;min-height:0;overflow:hidden;touch-action:none}
-  .layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  .layer .o{position:absolute;transform-origin:50% 50%}
-  .layer .o canvas{width:100%;height:auto;display:block}
-  #bg1,#bgo,#bg2{z-index:0} #fgo,#fg1{z-index:2}
+  #stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none}
+  #collage{position:absolute;inset:0}
+  #collage .o{position:absolute;transform-origin:50% 50%;pointer-events:none}
+  #collage .o canvas{width:100%;height:auto;display:block}
   #figure{position:absolute;left:50%;transform:translateX(-50%)}
   #figure canvas, #figure svg{position:absolute;inset:0;width:100%;height:100%}
   #c{z-index:2}
   #haloB{z-index:1} #haloF{z-index:3;pointer-events:none}
+  #front{position:absolute;inset:0;z-index:4;pointer-events:none}
+  #front .o{position:absolute}
+  #front .o canvas{width:100%;height:auto;display:block}
   #stageLbl{position:absolute;left:12px;top:8px;z-index:5;background:var(--paper2);padding:4px 8px 3px;box-shadow:1px 1px 0 #0001;font:italic 12px var(--serif);color:var(--grey);letter-spacing:.08em}
   #stageLbl b{display:block;font:600 10px var(--sans);letter-spacing:.3em;color:var(--ink);font-style:normal}
   #doves{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
@@ -74,24 +67,19 @@
 
   /* ── 아래: 버튼·기록 (찢긴 종이) ── */
   #bottom{position:relative;z-index:7;margin-top:-34px;padding:30px 18px calc(14px + env(safe-area-inset-bottom));
-    background:var(--paper2);border-top:1px solid var(--ink)}
-  /* 파란 마름모 띠 */
-  #bottom::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid var(--ink);
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 0L20 10 10 20 0 10Z' fill='%231E22D6'/%3E%3C/svg%3E") 0 0/20px 20px repeat-x,#fff}
-  #status{font:12px 'American Typewriter','Courier New',monospace;color:#333;text-align:center;min-height:18px;margin-bottom:10px}
+    background:var(--paper2);
+    clip-path:polygon(0 14px,6% 6px,13% 16px,21% 4px,30% 12px,38% 2px,47% 13px,55% 5px,63% 15px,71% 3px,80% 11px,88% 2px,95% 12px,100% 5px,100% 100%,0 100%);
+    filter:drop-shadow(0 -1px 0 #0002)}
+  #status{font:italic 13px var(--serif);color:var(--grey);text-align:center;min-height:18px;margin-bottom:10px}
   #btns{display:flex;gap:10px}
-  #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em;box-shadow:5px 5px 0 var(--ink)}
+  #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em}
   #go.run{background:var(--ink)}
   #quit{width:88px;height:52px;border:1px solid var(--ink);font-size:13px;letter-spacing:.1em}
   #quit[hidden]{display:none}
-  #stats{position:relative;display:flex;justify-content:space-between;margin-top:16px;border-top:1px solid var(--ink);padding-top:10px;
-    background:radial-gradient(circle,#1E22D640 1.1px,transparent 1.4px) 0 0/7px 7px}
-  #stats div{background:var(--paper2);margin:0 8px;padding:2px 0}
-  #stats::after{content:"";position:absolute;right:-6px;top:-9px;width:18px;height:18px;background:var(--bleu);
-    clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%)}
+  #stats{display:flex;justify-content:space-between;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
   #stats div{text-align:center;flex:1}
   #stats b{display:block;font:400 20px var(--serif)}
-  #stats span{font:10px 'American Typewriter','Courier New',monospace;color:#555;letter-spacing:.08em}
+  #stats span{font-size:10px;color:var(--grey);letter-spacing:.14em}
   #toast{position:fixed;left:50%;top:64%;transform:translate(-50%,-50%);z-index:20;background:var(--ink);color:var(--paper);
     padding:10px 18px;font:italic 15px var(--serif);opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
   #toast.on{opacity:1}
@@ -101,24 +89,24 @@
     #top{grid-column:1;grid-row:1;padding-top:10px}
     #time{font-size:64px}
     #stage{grid-column:2;grid-row:1/3}
-    #bottom{grid-column:1;grid-row:2;margin:0 0 10px 12px;padding-top:28px;align-self:end;border:1px solid var(--ink)}
+    #bottom{grid-column:1;grid-row:2;margin:0;clip-path:none;filter:none;background:none;padding-top:8px;align-self:end}
     #recent{display:none}
   }
   /* ── 달력 ── */
-  #date{font:italic 12px var(--serif);color:#bdbdb8;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
-  #date::after{content:"";width:11px;height:10px;border:1px solid #bdbdb8;border-top-width:3px}
+  #date{font:italic 13px var(--serif);color:var(--grey);letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+  #date::after{content:"";width:11px;height:10px;border:1px solid var(--grey);border-top-width:3px}
   #cal{position:fixed;inset:0;z-index:30;background:var(--paper2);overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:calc(12px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom))}
   #cal[hidden]{display:none}
-  #cal .ch{display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:#fff;padding:8px 10px}
-  #cal .ch div{text-align:center} #cal .ch small{display:block;font:600 9px var(--sans);letter-spacing:.34em;color:#8b8ff5}
-  #cal .ch b{font:400 20px var(--serif)} #cal .ch button{font:24px var(--serif);color:#fff;width:36px}
+  #cal .ch{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink);padding:6px 4px}
+  #cal .ch div{text-align:center} #cal .ch small{display:block;font:600 9px var(--sans);letter-spacing:.34em;color:var(--grey)}
+  #cal .ch b{font:400 20px var(--serif)} #cal .ch button{font:24px var(--serif);width:36px}
   #calNote{font:11px 'American Typewriter','Courier New',monospace;color:#555;margin:8px 2px 6px}
   #cal .cw,#calGrid{display:grid;grid-template-columns:repeat(7,1fr)}
   #cal .cw span{font:10px var(--sans);color:var(--grey);text-align:center;padding:4px 0;letter-spacing:.1em}
-  #calGrid{gap:3px;background:radial-gradient(circle,#1E22D630 1.1px,transparent 1.4px) 0 0/7px 7px;padding:3px;outline:1px solid var(--ink)}
-  #calGrid .d{position:relative;aspect-ratio:1/1.15;background:#fff;overflow:hidden;font:10px 'American Typewriter','Courier New',monospace}
-  #calGrid .d.out{visibility:hidden}
+  #calGrid{gap:0;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  #calGrid .d{position:relative;aspect-ratio:1/1.15;background:#fff;overflow:hidden;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font:10px 'American Typewriter','Courier New',monospace}
+  #calGrid .d.out{background:none;box-shadow:none;border:0}
   #calGrid .d i{position:absolute;left:2px;top:2px;font-style:normal;z-index:5;background:#fff;padding:0 2px;line-height:1.3}
   #calGrid .d .m{position:absolute;right:3px;bottom:3px;width:13px;height:13px;opacity:.8}
   #calGrid .d .st{position:absolute;inset:20% 10% 8%;display:grid;place-items:center;z-index:1;pointer-events:none}
@@ -126,7 +114,7 @@
   #calGrid .d.has::before{content:"";position:absolute;left:3px;right:3px;bottom:3px;height:3px;background:var(--bleu);opacity:.35}
   #calGrid .d.today{outline:2px solid var(--ink);outline-offset:-2px}
   #calGrid .d.sel{box-shadow:0 0 0 2px var(--bleu);z-index:3}
-  #plan{margin-top:12px;background:#fff;outline:1px solid var(--ink);padding:10px 12px;box-shadow:5px 5px 0 var(--bleu)}
+  #plan{margin-top:12px;background:#fff;outline:1px solid var(--ink);padding:10px 12px}
   #plan .ph{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:6px;margin-bottom:6px}
   #plan .ph b{font:400 17px var(--serif)} #planState{font:11px 'American Typewriter','Courier New',monospace;color:var(--bleu)}
   #planList .it{display:grid;grid-template-columns:26px 1fr 26px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #0002}
@@ -147,14 +135,20 @@
   #calClose{display:block;width:100%;margin-top:16px;height:46px;border:1px solid var(--ink);background:#fff;letter-spacing:.2em}
   #recent button.ok{color:#888;border-color:var(--bleu);text-decoration:line-through;text-decoration-color:var(--bleu)}
   #recent button.add{border-style:dashed}
+  #presets small{font-size:10px;opacity:.7}
+  #pomo{grid-column:1/3;display:flex;align-items:center;gap:5px;margin-top:4px;font:10px var(--sans);letter-spacing:.12em;color:var(--grey)}
+  #pomo i{width:8px;height:8px;border:1px solid var(--ink);border-radius:50%}
+  #pomo i.on{background:var(--bleu);border-color:var(--bleu)}
+  #pomo i.now{background:linear-gradient(90deg,var(--bleu) 50%,transparent 50%)}
+  #pomo span{margin-left:4px}
+  #time.rest{color:#777} #time.rest span{color:#777}
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
 </style></head><body>
 <div id="app">
-  <svg id="bg1" class="layer"></svg><div id="bgo" class="layer"></div><svg id="bg2" class="layer"></svg>
   <header id="top">
     <div id="brand"><button id="date" type="button"></button><b>BLEU <i>MINUIT</i></b></div>
     <div id="time">25<span>:</span>00</div>
-    <div id="moonBox"><canvas id="moon"></canvas><div id="moonTxt"></div></div>
+    <div id="moonBox"><svg id="moon" viewBox="-56 -56 112 112"></svg><div id="moonTxt"></div></div>
     <div id="pomo"></div>
     <div id="row">
       <input id="subject" placeholder="무엇에 집중할까요" maxlength="20" enterkeyhint="done" autocomplete="off">
@@ -165,16 +159,17 @@
 
   <main id="stage">
     <div id="loading">석고상을 깨우는 중…</div>
-        <div id="figure">
+    <div id="collage"></div>
+    <div id="figure">
       <svg id="haloB"></svg>
       <canvas id="c"></canvas>
       <svg id="haloF"></svg>
     </div>
+    <div id="front"></div>
     <div id="stageLbl"><b>CÉLESTE</b><span id="stageName">plâtre · 석고</span></div>
     <div id="doves"></div>
   </main>
 
-  <div id="fgo" class="layer"></div><svg id="fg1" class="layer"></svg>
   <footer id="bottom">
     <div id="status">시간을 고르고 시작하세요</div>
     <div id="btns"><button id="go">집중 시작</button><button id="quit" hidden>그만두기</button></div>
@@ -216,8 +211,7 @@ const HALO = {x:650, y:455, rx:250, ry:58};          // 원화 좌표, 머리 �
 /* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
 function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
   return ()=>{ h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1e6) / 1e6; }; }
-const DAY = new URLSearchParams(location.search).get('day');          // 확인용: ?day=2026-11-3
-const dayKey = () => { if(DAY) return DAY; const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+const dayKey = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
 
 /* ═══ 진짜 달의 위상 ═══ */
 function moonAge(d = new Date()){ const syn = 29.530588853, ref = Date.UTC(2000,0,6,18,14);
@@ -229,219 +223,89 @@ function moonPath(lit, r = 40){
   const rx = Math.abs(1 - 2*lit)*r, sweep = lit < .5 ? 0 : 1;      // 반달 전엔 그림자 경계가 오른쪽으로, 지나면 왼쪽으로 부푼다
   return `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
 }
-/* 콜라주 달 (레퍼런스처럼): 흑백 달 사진 + 뒤로 비켜 놓은 회색 원.
-   모양은 오늘 실제 달의 위상. 그림자 쪽은 클랭 블루를 곱하기로 얹어 사진 결이 비친다.
-   집중 진행도는 흰 궤도 위 별이 돈다 */
-let moonImg = null, moonLast = '';
-loadImg(PARTS + 'obj_moon.webp').then(i=>{ moonImg = i; moonLast = ''; paint(); paintCal(); });
-// 달 원판 하나 그리기 (g 원점 = 달 중심). age = 달 나이(일)
-function moonDisc(g, r, age){
+// 실제 달 모양(잉크) — 기우는 달은 좌우를 뒤집는다
+function phaseSvg(age, r = 40, ink = '#121212', paper = '#f7f6f2'){   // 그림자 쪽은 잉크, 밝은 쪽은 종이색
   const f = age/29.530588853, lit = (1 - Math.cos(2*Math.PI*f))/2;
-  g.save(); g.beginPath(); g.arc(0, 0, r, 0, Math.PI*2); g.clip();
-  if(moonImg){ g.filter = 'grayscale(1) contrast(1.15)'; g.drawImage(moonImg, -r - 1, -r - 1, 2*r + 2, 2*r + 2); g.filter = 'none'; }
-  else { g.fillStyle = '#bbb'; g.fillRect(-r, -r, 2*r, 2*r); }
-  if(lit < .995){
-    if(f >= .5) g.scale(-1, 1);                                      // 기우는 달: 밝은 쪽이 왼쪽
-    const rx = Math.abs(1 - 2*lit)*r;
-    g.beginPath(); g.arc(0, 0, r + 1, Math.PI/2, Math.PI*1.5);                               // 왼쪽 반원(어두운 쪽 바깥)
-    if(lit < .5) g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, Math.PI/2, false); // 경계가 오른쪽으로 부풂
-    else g.ellipse(0, 0, Math.max(rx, .01), r + 1, 0, -Math.PI/2, -Math.PI*1.5, true);      // 경계가 왼쪽으로 들어감
-    g.closePath();
-    g.globalCompositeOperation = 'multiply'; g.fillStyle = B; g.globalAlpha = .92; g.fill();
-    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
-  }
-  g.restore();
+  return `<circle r="${r}" fill="${ink}"/><path d="${moonPath(lit, r)}" fill="${paper}"${f >= .5 ? ' transform="scale(-1 1)"' : ''}/>`;
 }
 function paintMoon(p){
-  const age = moonAge(), cv = $('moon'), dpr = Math.min(3, devicePixelRatio || 1), S = 124;
-  const key = (p*500|0) + '/' + !!moonImg + '/' + (age*20|0);
-  if(key === moonLast) return; moonLast = key;
-  if(cv.width !== S*dpr){ cv.width = cv.height = S*dpr; }
-  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
-  const c = S/2, r = 40;
-  g.save(); g.translate(c + 4, c - 2);
-  g.fillStyle = '#8a8a86'; g.beginPath(); g.arc(-11, 9, r, 0, Math.PI*2); g.fill();          // 비켜 놓은 회색 원
-  moonDisc(g, r, age);
-  // 흰 궤도(앞쪽 반만 달 위로) + 진행도 별
-  g.rotate(-.42); const orx = r + 16, ory = 11;
-  g.strokeStyle = '#fff'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(0, 0, orx, ory, 0, 0, Math.PI); g.stroke();
-  g.strokeStyle = B; g.lineWidth = .8; g.beginPath(); g.ellipse(0, 0, orx, ory, 0, Math.PI, Math.PI*2); g.stroke();
-  const a = Math.PI + p*Math.PI*2, R5 = p >= 1 ? 8 : 5.5, k = R5*.13;
-  g.translate(Math.cos(a)*orx, Math.sin(a)*ory); g.rotate(.42); g.fillStyle = B;
-  g.beginPath(); g.moveTo(0, -R5); g.quadraticCurveTo(k, -k, R5, 0); g.quadraticCurveTo(k, k, 0, R5); g.quadraticCurveTo(-k, k, -R5, 0); g.quadraticCurveTo(-k, -k, 0, -R5); g.fill();
-  g.restore();
+  // 달 = 오늘 실제 위상, 둘레의 파란 별 = 집중 진행도
+  const a = -Math.PI/2 + p*Math.PI*2, sx = Math.cos(a)*46, sy = Math.sin(a)*46, k = .9;
+  $('moon').innerHTML = `${phaseSvg(moonAge())}
+    <circle r="40" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="2 3"/>
+    <circle r="46" fill="none" stroke="#12121222"/>
+    <path d="M${sx} ${sy - 7}Q${sx + k} ${sy - k} ${sx + 7} ${sy}Q${sx + k} ${sy + k} ${sx} ${sy + 7}Q${sx - k} ${sy + k} ${sx - 7} ${sy}Q${sx - k} ${sy - k} ${sx} ${sy - 7}Z" fill="#1E22D6"/>`;
 }
 
-/* ═══ 오늘의 콜라주 (화면 전체) ═══
-   파란 띠·망점 판·궤도선·별·비둘기 실루엣·타자기 글귀 + 오브젝트 30개(처리 7종, 글리치·스티커 테두리)
-   날짜로 난수를 정해 같은 날엔 같은 구도. 얼굴 둘레는 비워 둔다. */
-const B = '#1E22D6', K = '#121212';
-const TREAT = ['plain','bleu','gradient','halftone','negative','ghost','plain'];
-const TREAT_KO = {plain:'흑백',bleu:'블루',gradient:'블루 그라데이션',ghost:'잔상',halftone:'망점',negative:'반전'};
-const LINES = [
-  ['le plâtre se souvient', 'de la couleur.', 'elle attend minuit,', 'et minuit attend elle.'],
-  ['No matter how long', 'the night, the blue', 'comes back to me.', 'I stay. I keep going.'],
-  ['Céleste ne bouge pas.', 'Elle compte les étoiles', 'une à une,', "jusqu'à l'aube bleue."],
-  ['I was made of stone', 'and silence. Then', 'you stayed a while,', 'and I remembered blue.'],
-  ["à minuit, tout ce qui", 'était blanc devient', 'bleu. même le silence.'],
+/* ═══ 오늘의 콜라주: 오브젝트 30 × 처리 6 × 구도 4 ═══ */
+const TREAT = ['plain','bleu','ghost','halftone','cutout','negative'];
+const TREAT_KO = {plain:'흑백',bleu:'블루',ghost:'잔상',halftone:'망점',cutout:'오려붙임',negative:'반전'};
+// 구도: [x%, y%, 높이%, 회전°, 앞뒤] — 무대 상자 기준, 캐릭터는 가운데
+const COMPOSE = [
+  [[ -4, 6,38,-8,'b'],[72, 2,34, 9,'b'],[78,46,30,-6,'b'],[-8,50,28, 7,'b'],[70,74,20,12,'f']],
+  [[ 62,-2,44, 6,'b'],[-6,18,36,-5,'b'],[-2,62,24,10,'b'],[80,40,26,-9,'b'],[ 2,76,18,-14,'f']],
+  [[ 30,-6,30, 0,'b'],[-10,30,46,4,'b'],[74,22,40,-4,'b'],[82,66,22,8,'b'],[-4,78,17,10,'f']],
+  [[ -6,-4,30,10,'b'],[74,-2,30,-10,'b'],[-8,40,32,-4,'b'],[76,44,34,5,'b'],[76,78,18,-8,'f']],
 ];
-const ARC_TXT = ['bleu minuit · le plâtre se souvient de la couleur · ', 'stay until midnight · reste jusqu’à minuit · ', 'théorie du bleu · une étoile, puis une autre · '];
+const IMG = {}, getImg = n => IMG[n] || (IMG[n] = loadImg(PARTS + 'obj_' + n + '.webp'));
 function loadImg(src){ return new Promise((ok, no)=>{ const i = new Image(); i.onload = ()=>ok(i); i.onerror = no; i.src = src; }); }
-const IMG = {}, TC = {};
-const getImg = n => IMG[n] || (IMG[n] = loadImg(PARTS + 'obj_' + n + '.webp'));
-function canvasOf(w, h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
-// 그림 처리: 흑백/블루/블루 그라데이션/망점/반전/잔상 (+글리치, +흰 스티커 테두리)
-function treat(img, kind, glitch, sticker, seed, max = 460){
-  const key = [img.src, kind, glitch, sticker, seed, max].join('|'); if(TC[key]) return TC[key];
+function treat(img, kind, rnd, max = 420){
   const s = Math.min(1, max / Math.max(img.width, img.height));
   const w = Math.round(img.width*s), h = Math.round(img.height*s);
-  let c = canvasOf(w, h), g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
   const d = g.getImageData(0, 0, w, h), px = d.data;
   for(let i = 0; i < px.length; i += 4){
-    let L = (px[i]*.3 + px[i+1]*.59 + px[i+2]*.11) / 255; L = clamp((L - .5)*1.2 + .5, 0, 1);
-    const x = (i/4) % w, y = Math.floor(i/4/w);
+    let L = (px[i]*.3 + px[i+1]*.59 + px[i+2]*.11) / 255;
+    L = clamp((L - .5)*1.15 + .5, 0, 1);
     let r, gg, b, a = px[i+3];
-    if(kind === 'bleu'){ r = 30 + 225*L; gg = 34 + 221*L; b = 214 + 41*L; }
-    else if(kind === 'gradient'){ const t = clamp(y/h*1.1 - .15 + (1-L)*.35, 0, 1); r = 255 + (30-255)*t; gg = 255 + (34-255)*t; b = 255 + (214-255)*t; }
-    else if(kind === 'negative'){ r = gg = b = 255*(1-L); }
-    else if(kind === 'ghost'){ r = gg = b = 140 + 110*L; a *= .5; }
-    else if(kind === 'halftone'){ const cx = (x % 5) - 2, cy = (y % 5) - 2, on = Math.hypot(cx, cy) < (1-L)*3.4;
-      r = gg = b = on ? 18 : 240; if(!on) a *= .55; }
-    else { r = gg = b = 255*L; }
+    if(kind === 'bleu'){ r = 30 + (255-30)*L; gg = 34 + (255-34)*L; b = 214 + (255-214)*L; }      // 클랭 블루 ↔ 흰색
+    else if(kind === 'negative'){ const v = 255*(1-L); r = gg = b = v; }
+    else if(kind === 'ghost'){ const v = 120 + 120*L; r = gg = b = v; a *= .45; }
+    else { const v = 255*L; r = gg = b = v; }
+    if(kind === 'halftone'){                                          // 망점: 5px 격자 점
+      const x = (i/4) % w, y = Math.floor(i/4/w), cx = (x % 5) - 2, cy = (y % 5) - 2;
+      const on = Math.hypot(cx, cy) < (1-L)*3.4;
+      r = gg = b = on ? 18 : 236; if(!on) a *= .5;
+    }
     px[i] = r; px[i+1] = gg; px[i+2] = b; px[i+3] = a;
   }
   g.putImageData(d, 0, 0);
-  const rnd = rngOf('t' + seed);
-  if(glitch){                                         // 가로로 잘라 몇 줄을 밀어낸다 + 흰 줄
-    const o = canvasOf(w + 40, h), q = o.getContext('2d');
-    for(let y = 0; y < h;){ const sh = 4 + Math.floor(rnd()*26), off = rnd() < .3 ? (rnd()-.5)*44 : 0;
-      q.drawImage(c, 0, y, w, sh, 20 + off, y, w, sh);
-      if(rnd() < .12){ q.fillStyle = rnd() < .5 ? '#fff' : B; q.fillRect(20 + rnd()*w*.6, y, w*(.1 + rnd()*.3), Math.min(sh, 8)); }
-      y += sh; }
-    c = o;
+  if(kind === 'cutout'){                                              // 흰 테두리 + 그림자: 오려 붙인 종이
+    const o = document.createElement('canvas'); o.width = w+16; o.height = h+16;
+    const q = o.getContext('2d');
+    q.shadowColor = '#0004'; q.shadowBlur = 6; q.shadowOffsetX = 2; q.shadowOffsetY = 3;
+    for(let k = 0; k < 12; k++){ const t = k/12*Math.PI*2; q.drawImage(c, 8 + Math.cos(t)*5, 8 + Math.sin(t)*5); }
+    q.shadowColor = 'transparent'; q.globalCompositeOperation = 'source-in'; q.fillStyle = '#fbfaf6'; q.fillRect(0, 0, o.width, o.height);
+    q.globalCompositeOperation = 'source-over'; q.drawImage(c, 8, 8);
+    return o;
   }
-  if(sticker){                                        // 흰 테두리 + 얇은 그림자
-    const p = 9, o = canvasOf(c.width + p*2, c.height + p*2), q = o.getContext('2d');
-    for(let k = 0; k < 16; k++){ const t = k/16*Math.PI*2; q.drawImage(c, p + Math.cos(t)*6, p + Math.sin(t)*6); }
-    q.globalCompositeOperation = 'source-in'; q.fillStyle = '#fff'; q.fillRect(0, 0, o.width, o.height);
-    q.globalCompositeOperation = 'destination-over'; q.filter = 'blur(3px)'; q.globalAlpha = .25; q.drawImage(o, 2, 3);
-    q.filter = 'none'; q.globalAlpha = 1; q.globalCompositeOperation = 'source-over'; q.drawImage(c, p, p);
-    c = o;
-  }
-  return TC[key] = c;
+  return c;
 }
-// 비둘기 실루엣: w = 흰 바탕+파란 테두리, b = 파랑, k = 검정
-function dove(img, kind){
-  const key = 'dove|' + kind; if(TC[key]) return TC[key];
-  const s = 300 / img.width, w = Math.round(img.width*s), h = Math.round(img.height*s), p = 6;
-  const sil = col=>{ const c = canvasOf(w + p*2, h + p*2), g = c.getContext('2d'); g.drawImage(img, p, p, w, h);
-    g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height); return c; };
-  let c;
-  if(kind === 'w'){ c = canvasOf(w + p*2, h + p*2); const g = c.getContext('2d'), o = sil(B);
-    for(let k = 0; k < 12; k++){ const t = k/12*Math.PI*2; g.drawImage(o, Math.cos(t)*2.5, Math.sin(t)*2.5); }
-    g.drawImage(sil('#fff'), 0, 0); }
-  else c = sil(kind === 'b' ? B : K);
-  return TC[key] = c;
-}
-const star = (x, y, R, fill, stroke = 'none', rot = 0) => { const k = R*.13;
-  return `<path transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot})" d="M0 ${-R}Q${k} ${-k} ${R} 0Q${k} ${k} 0 ${R}Q${-k} ${k} ${-R} 0Q${-k} ${-k} 0 ${-R}Z" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>`; };
-
-let FIG = null, collageBusy = 0;
 async function buildCollage(){
-  const my = ++collageBusy;
-  const A = $('app'), st = $('stage'), AW = A.clientWidth, H = A.clientHeight;
-  const land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
-  const OX = land ? st.offsetLeft : 0, W = land ? st.clientWidth : AW;      // 가로에선 무대 쪽에만 깐다
-  if(!FIG || !W) return;
-  const R = rngOf('bleu-minuit/' + dayKey()), rr = (a, b) => a + R()*(b - a), pick = arr => arr[Math.floor(R()*arr.length)];
-  const fx = X => FIG.x - OX + X*FIG.sc, fy = Y => FIG.y + Y*FIG.sc;
-  const face = {x:fx(650), y:fy(800), r:300*FIG.sc}, chest = {x:fx(650), y:fy(1350)};
-  const nearFace = (x, y, m = 0) => Math.hypot(x - face.x, y - face.y) < face.r + m;
-  // 달 자리(앱 좌표 → 콜라주 좌표). 여기 겹치는 것은 옅게 하거나 빼서 달이 묻히지 않게
-  const mb = $('moon').getBoundingClientRect(), ab = A.getBoundingClientRect();
-  const moon = {x:mb.left - ab.left - OX + 12, y:mb.top - ab.top + 8, w:mb.width - 20, h:mb.height - 16};
-  const hitsMoon = (x, y, w, h) => x < moon.x + moon.w && x + w > moon.x && y < moon.y + moon.h && y + h > moon.y;
-  const side = R() < .5 ? 'L' : 'R', sx = v => side === 'L' ? v : W - v;      // 파란 띠 쪽 기준 좌우
-  let b1 = '', b2 = '', f1 = '';
-  const defs = `<defs>
-    <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.25" fill="${B}"/></pattern>
-    <pattern id="sq" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="2" height="2" fill="${B}" opacity=".55"/></pattern>
-    <pattern id="kdots" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.4" fill="${K}"/></pattern></defs>`;
-
-  // 1) 큰 파란 띠 (한쪽 가장자리, 아래쪽은 안으로 꺾임)
-  const bw = W*rr(.07, .11);
-  b1 += `<rect x="${side === 'L' ? 0 : W - bw}" y="0" width="${bw}" height="${H}" fill="${B}"/>`;
-  { const y = H*rr(.55, .75), w = W*rr(.12, .22); b1 += `<rect x="${side === 'L' ? bw : W - bw - w}" y="${y}" width="${w}" height="${rr(10, 18)}" fill="${B}"/>`; }
-  // 2) 망점 판 + 계단 테두리, 연파랑 판
-  { const x = W*rr(.1, .3), y = H*rr(.2, .3), w = W*rr(.42, .6), h = H*rr(.3, .42), n = 14;
-    b1 += `<path d="M${x} ${y}H${x+w}V${y+h-n}H${x+w-n}V${y+h}H${x}Z" fill="url(#dots)" opacity=".75" stroke="${B}" stroke-width="1.3"/>`;
-    const x2 = x + w*rr(.35, .6), y2 = y + h*rr(.45, .7);
-    b1 += `<rect x="${x2}" y="${y2}" width="${W*rr(.22, .32)}" height="${H*rr(.2, .3)}" fill="#c9cbf5" opacity=".6"/><rect x="${x2}" y="${y2}" width="${W*rr(.22, .32)}" height="${H*rr(.2, .3)}" fill="url(#sq)" stroke="${B}" stroke-width="1"/>`; }
-  // 3) 검은 원
-  b1 += `<circle cx="${sx(W*rr(.12, .22))}" cy="${H*rr(.42, .58)}" r="${W*rr(.06, .09)}" fill="${K}"/>`;
-  // 4) 궤도선(가슴 중심, 앞쪽 반은 캐릭터 위로), 큰 원, 긴 직선
-  const orbits = [];
-  for(let i = 0; i < 3; i++){ const rx = W*rr(.45, .85), ry = rx*rr(.18, .34), rot = rr(-22, 22); orbits.push([rx, ry, rot]);
-    b1 += `<ellipse cx="${chest.x}" cy="${chest.y}" rx="${rx}" ry="${ry}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${B}" stroke-width="${i ? .8 : 1.6}" opacity=".75"/>`;
-    f1 += `<path d="M${chest.x - rx} ${chest.y}A${rx} ${ry} 0 0 0 ${chest.x + rx} ${chest.y}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${i ? B : '#fff'}" stroke-width="${i ? .8 : 1.6}" opacity=".85"/>`; }
-  for(let i = 0; i < 2; i++) b1 += `<circle cx="${W*rr(0, 1)}" cy="${H*rr(.15, .85)}" r="${W*rr(.3, .6)}" fill="none" stroke="${B}" stroke-width=".7" ${i ? 'stroke-dasharray="3 4"' : ''} opacity=".6"/>`;
-  for(let i = 0; i < 5; i++){ const y1 = H*rr(0, 1), y2 = H*rr(0, 1);
-    b2 += `<line x1="0" y1="${y1}" x2="${W}" y2="${y2}" stroke="${B}" stroke-width=".6" opacity=".55"/>`; }
-  // 5) 오브젝트: 가장자리 자리 6곳 중 4곳, 크게 + 화면 밖으로 잘림
-  const slots = [[-.16,.1],[.6,.05],[-.22,.42],[.66,.36],[-.14,.66],[.62,.64]].sort(()=>R() - .5).slice(0, 4);
-  const pool = OBJS.filter(n=>n !== 'dove').sort(()=>R() - .5);
-  const objs = slots.map((s, i)=>({n:pool[i], x:s[0], y:s[1], h:rr(.26, .4), rot:rr(-12, 12), kind:pick(TREAT), glitch:R() < .45, sticker:R() < .55, front:false}));
-  objs.push({n:pool[4], x:side === 'L' ? rr(.76, .84) : rr(-.14, -.06), y:rr(.6, .66), h:rr(.15, .19), rot:rr(-14, 14), kind:pick(TREAT), glitch:R() < .5, sticker:true, front:true});
-  objs[Math.floor(R()*4)].kind = 'bleu';
-  // 6) 작은 파란/검은 막대
-  for(let i = 0; i < 6; i++){ const x = W*rr(.05, .85), y = H*rr(.12, .9), w = W*rr(.06, .26), h = rr(7, 22);
-    if(nearFace(x + w/2, y, 20)) continue;
-    if(hitsMoon(x, y, w, h)) continue;
-    const t = i % 3;
-    const el = t === 0 ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${B}"/>` : t === 1 ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${B}" stroke-width="1.4"/>` : `<rect x="${x}" y="${y}" width="${w*.7}" height="${h*.7}" fill="${K}"/>`;
-    if(i < 5) b2 += el; else if(!nearFace(x, y, 60)) f1 += el; }
-  // 7) 별: 큰 파랑 1, 중간 검정 1~2, 작은 파랑 몇 개
-  { let x, y, t = 0; do { x = sx(W*rr(.55, .85)); y = H*rr(.3, .6); } while(nearFace(x, y, W*.1) && ++t < 20);
-    b2 += star(x, y, W*rr(.14, .2), B, 'none', rr(-15, 15)); }
-  for(let i = 0; i < 2; i++){ const x = W*rr(.08, .92), y = H*rr(.25, .85); if(!nearFace(x, y, 40)) b2 += star(x, y, W*rr(.05, .09), i ? '#fff' : K, i ? K : 'none', rr(-20, 20)); }
-  for(let i = 0; i < 4; i++){ const x = W*rr(.05, .95), y = H*rr(.2, .9); const s = star(x, y, rr(5, 11), B);
-    if(i < 3) b2 += s; else if(!nearFace(x, y, 30)) f1 += s; }
-  // 8) 타자기 글귀 상자 + 곡선 글귀
-  Object.assign($('stageLbl').style, side === 'L' ? {left:'auto', right:'12px'} : {left:'12px', right:'auto'});   // 이름표는 글귀 반대쪽
-  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = H*rr(.31, .34), lh = 12;
-    f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
-    f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="9.5" fill="${K}">` +
-      L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
-  { const r = W*rr(.32, .42), cx = sx(W*rr(.7, .9)), cy = H*rr(.72, .86);
-    b2 += `<path id="arc" d="M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}" fill="none" stroke="${B}" stroke-width=".6" stroke-dasharray="1 3"/>
-      <text font-family="var(--serif),serif" font-style="italic" font-size="11" fill="${B}" letter-spacing="1"><textPath href="#arc">${pick(ARC_TXT).repeat(2)}</textPath></text>`; }
-
-  // 그림 불러오기 (처음 한 번만 실제로 받는다)
-  const [doveImg, ...imgs] = await Promise.all([getImg('dove'), ...objs.map(o=>getImg(o.n))]);
-  if(my !== collageBusy) return;
-  const bo = document.createDocumentFragment(), fo = document.createDocumentFragment();
-  objs.forEach((o, i)=>{
-    if(!o.front && hitsMoon(o.x*W, o.y*H, H*o.h*imgs[i].width/imgs[i].height, H*o.h)){ o.kind = 'ghost'; o.glitch = false; }   // 달 뒤: 옅은 잔상으로
-    const c = treat(imgs[i], o.kind, o.glitch, o.sticker, dayKey() + i);
-    const h = H*o.h, w = h * c.width/c.height, el = document.createElement('div'); el.className = 'o';
-    Object.assign(el.style, {left:(OX + o.x*W) + 'px', top:(o.y*H) + 'px', width:w + 'px', transform:`rotate(${o.rot}deg)`});
-    el.appendChild(cloneCanvas(c)); (o.front ? fo : bo).appendChild(el); });
-  // 비둘기 떼: 대각선으로 흩어진다. 얼굴 둘레 피함
-  const n = 7 + Math.floor(R()*4), dir = R() < .5 ? 1 : -1;
-  for(let i = 0, t = 0; i < n && t < 60; t++){
-    const u = R(), x = W*(dir > 0 ? u : 1 - u) + rr(-40, 40), y = H*(.85 - u*.7) + rr(-60, 60), s = W*rr(.08, .2);
-    if(nearFace(x, y, s*.6) || hitsMoon(x - s/2, y - s/2, s, s)) continue;
-    const kind = pick(['w','w','w','b','b','k']), c = cloneCanvas(dove(doveImg, kind)), el = document.createElement('div'); el.className = 'o';
-    Object.assign(el.style, {left:(OX + x - s/2) + 'px', top:(y - s/2) + 'px', width:s + 'px', transform:`scaleX(${dir}) rotate(${rr(-25, 15)}deg)`});
-    el.appendChild(c); (i < n - 2 ? bo : fo).appendChild(el); i++; }
-  $('bgo').replaceChildren(bo); $('fgo').replaceChildren(fo);
-  for(const id of ['bg1','bg2','fg1']) $(id).setAttribute('viewBox', `0 0 ${AW} ${H}`);
-  const g = t => `<g transform="translate(${OX} 0)">${t}</g>`;
-  for(const id of ['bg1','bgo','bg2','fgo','fg1']) $(id).style.clipPath = OX ? `inset(0 0 0 ${OX}px)` : '';   // 가로: 왼쪽 글자 칸으로 넘치지 않게
-  $('bg1').innerHTML = defs + g(b1); $('bg2').innerHTML = g(b2); $('fg1').innerHTML = g(f1);
-  window.TODAY = objs.map(o=>o.n + '·' + TREAT_KO[o.kind] + (o.glitch ? '·글리치' : ''));
+  const rnd = rngOf('bleu-minuit/' + dayKey());
+  const pool = OBJS.slice(); const pick = [];
+  for(let i = 0; i < 5; i++) pick.push(pool.splice(Math.floor(rnd()*pool.length), 1)[0]);
+  const comp = COMPOSE[Math.floor(rnd()*COMPOSE.length)];
+  const kinds = pick.map(()=>TREAT[Math.floor(rnd()*TREAT.length)]);
+  kinds[Math.floor(rnd()*5)] = 'bleu';                                 // 파란색은 하루 한 점만 꼭
+  const els = await Promise.all(pick.map(async (n, i)=>{
+    const img = await loadImg(PARTS + 'obj_' + n + '.webp');
+    const [x, y, hh, rot, side] = comp[i];
+    const el = document.createElement('div'); el.className = 'o';
+    el.dataset.h = hh; el.dataset.ar = img.width / img.height;
+    el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = `rotate(${rot + (rnd()-.5)*6}deg)`;
+    el.appendChild(treat(img, kinds[i], rnd));
+    (side === 'f' ? $('front') : $('collage')).appendChild(el);
+    return el;
+  }));
+  window.TODAY = pick.map((n, i)=>n + '·' + TREAT_KO[kinds[i]]);
+  sizeCollage();
 }
-function cloneCanvas(c){ const o = canvasOf(c.width, c.height); o.getContext('2d').drawImage(c, 0, 0); return o; }
+function sizeCollage(){
+  const H = $('stage').clientHeight;
+  document.querySelectorAll('#collage .o, #front .o').forEach(el=>{ el.style.width = (H * el.dataset.h/100 * el.dataset.ar) + 'px'; });
+}
 
 /* ═══ 헤일로: 머리 뒤(위쪽 반원)와 앞(아래쪽 반원)으로 나눠 그린다. 별이 진행도만큼 돈다 ═══ */
 function haloSvg(front, p){
@@ -513,8 +377,7 @@ let calMonth = new Date(), calSel = keyOf();
 calMonth.setDate(1);
 function openCal(k = keyOf()){ calSel = k; calMonth = dateOf(k); calMonth.setDate(1); $('cal').hidden = false;
   paintCal(); }
-function smallMoon(age){                                       // 칸 구석의 작은 실제 달
-  const c = canvasOf(26, 26), g = c.getContext('2d'); g.translate(13, 13); moonDisc(g, 12, age); return c; }
+
 function paintCal(){
   if($('cal').hidden) return;
   const y = calMonth.getFullYear(), m = calMonth.getMonth(), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
@@ -533,8 +396,8 @@ function paintCal(){
     const st = stamps[k];
     if(st){ filled++;
       const box = document.createElement('div'); box.className = 'st'; box.style.transform = `rotate(${st.r}deg)`; el.appendChild(box);
-      getImg(st.n).then(img=>{ box.appendChild(cloneCanvas(treat(img, st.k, false, true, 'cal' + k, 140))); });
-    } else { const mc = smallMoon(moonAge(new Date(y, m, d, 21))); mc.className = 'm'; el.appendChild(mc); }
+      getImg(st.n).then(img=>{ box.appendChild(treat(img, st.k === 'gradient' ? 'bleu' : st.k, null, 140)); });
+    } else el.insertAdjacentHTML('beforeend', '<svg class="m" viewBox="-50 -50 100 100"><circle r="40" fill="none" stroke="#0003" stroke-width="4"/>' + phaseSvg(moonAge(new Date(y, m, d, 21)), 40, '#666', '#fff') + '</svg>');
     grid.appendChild(el);
   }
   $('calNote').textContent = (filled ? '이번 달 콜라주 ' + filled + '조각 · ' : '') + '할 일을 다 체크한 날엔 콜라주 조각이 붙어요';
@@ -671,6 +534,7 @@ $('presets').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
   setPomo(+b.dataset.i); };
 $('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; if(b.dataset.cal){ openCal(); return; }
   if(b.dataset.i != null){ toggleItem(keyOf(), +b.dataset.i); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
+
 $('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
 $('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
 try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}
@@ -691,11 +555,10 @@ function fit(){
   $('app').style.height = appH() + 'px';
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
-  const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? 1 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
-  const fw = IW*sc, fh = IH*sc, top = H + (land ? 0 : 10) - VIEW_Y1*sc;    // 난간 아래(VIEW_Y1)를 무대 바닥에 맞춘다
-  Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
-  FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};   // 화면(앱) 좌표의 원화 위치
-  clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
+  const sc = H / (VIEW_Y1 - VIEW_Y0);
+  const fw = IW*sc, fh = IH*sc;
+  Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:(-VIEW_Y0*sc) + 'px'});
+  sizeCollage();
 }
 addEventListener('resize', fit);
 
@@ -704,12 +567,13 @@ let rig = null, shown = 0;
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
+  buildCollage().catch(e=>console.warn('collage', e));
   rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
   $('loading').remove();
   window.rig = rig;
   const loop = ms=>{
     // 색은 진행도를 천천히 따라간다 (끝나면 완전히, 대기 중엔 석고)
-    const want = mode === 'finished' ? 1 : progress();
+    const want = progress();
     shown += (want - shown) * .04;
     rig.draw(ms/1000, shown);
     // 헤일로는 머리를 따라 움직인다
