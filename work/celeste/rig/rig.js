@@ -17,7 +17,7 @@ window.CelesteRig = async function(cv, opt = {}){
     gaze:{x:0, y:0, tx:0, ty:0, next:0},                      // 눈동자
     blink:{t:-1, next:1.5, double:false},
     roll:{x:0, y:0, vx:0, vy:0, tx:0, next:0},              // 고개 기울기(라디안)
-    smile:0, frown:0, react:0,
+    smile:0, frown:0, react:0, eyeC:1,
     torso:{x:0, y:0, vx:0, vy:0},                             // 상체: 고개를 조금 늦게, 조금만 따라온다
     breath:{ph:0, v:0},                                       // 숨: 들숨 짧고 날숨 길게, 박자도 조금씩 다르게
     wind:0, windT:0, windV:0,
@@ -97,7 +97,7 @@ window.CelesteRig = async function(cv, opt = {}){
     // 고개: 가끔 다른 곳을 본다. 손가락이 최근에 움직였으면 그쪽을 본다
     const pointing = S.pointer && Number.isFinite(S.pointer.x) && performance.now() - S.pointer.t < 2500;
     // 가만히 있어도 여러 느린 흔들림이 겹쳐 미세하게 움직이고, 가끔 천천히 다른 곳을 본다
-    const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*opt.motion;
+    const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*.12*opt.motion;   // 쉬는 동안 흔들림은 아주 조금 → 머리카락은 움직임이 있을 때만
     const idleY = Math.sin(t*.29 + 2)*.05;                    // 상하는 확정값 그대로(배율 없음)
     let glance = false;
     if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -10, 10)*opt.motion; H.ty = clamp((S.pointer.y - 880)/1500, -.15, .15); }
@@ -216,7 +216,8 @@ window.CelesteRig = async function(cv, opt = {}){
     const B = S.blink, bt = B.t < 0 ? 1 : (t - B.t);
     const one = p=>p < .07 ? p/.07 : p < .11 ? 1 : p < .22 ? 1 - (p-.11)/.11 : 0;          // 감기 빠르게, 뜨기 천천히
     const blink = B.t < 0 ? 0 : Math.max(one(bt), B.double ? one(bt - .26) : 0);
-    const closed = Math.max(1 - sm(.12, .25, stage), blink);
+    S.eyeC += ((stage < .18 ? 1 : 0) - S.eyeC)*Math.min(1, dt*14);                      // 감고 뜨기는 깜빡임처럼 빠르게(반쯤 겹쳐 보이지 않게)
+    const closed = Math.max(S.eyeC, blink);
     for(const name of ORDER){
       if(api.only && !api.only.includes(name)) continue;               // 확인용: 일부 레이어만 그리기
       const m = M[name], g = RIG.layers[name]?.group || m.group;
