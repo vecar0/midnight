@@ -73,7 +73,7 @@
     100%{opacity:0;transform:translate(var(--dx),-120vh) rotate(calc(var(--r)*-1)) scale(1)}}
 
   /* ── 아래: 버튼·기록 (찢긴 종이) ── */
-  #bottom{position:relative;z-index:7;margin-top:-34px;padding:30px 18px calc(6px + env(safe-area-inset-bottom));
+  #bottom{position:relative;z-index:7;margin-top:-34px;padding:30px 18px max(8px, calc(env(safe-area-inset-bottom) - 16px));
     background:var(--paper2);border-top:1px solid var(--ink)}
   /* 파란 마름모 띠 */
   #bottom::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid var(--ink);
@@ -730,8 +730,11 @@ function fit(){
   for(const el of [document.documentElement, document.body, $('app')]){ el.style.height = h; el.style.minHeight = h; }
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
-  const sc = Math.min(H / (VIEW_Y1 - VIEW_Y0) * (land ? .9 : .86), st.clientWidth*.86 / 980);   // 980 = 팔 폭
-  const fw = IW*sc, fh = IH*sc, top = H + (land ? 0 : 10) - VIEW_Y1*sc;    // 난간 아래(VIEW_Y1)를 무대 바닥에 맞춘다
+  // 세로: 팔짱 아래(원화 y 1950)부터는 아래 패널 뒤로 숨겨서 그만큼 캐릭터를 크게. 가로: 난간까지 보이게
+  const BOT = land ? VIEW_Y1 : 1950;
+  const sc = land ? Math.min(H / (VIEW_Y1 - VIEW_Y0) * .9, st.clientWidth*.86 / 980)
+                  : Math.min(H / (BOT - VIEW_Y0 + 40), st.clientWidth*.94 / 980);   // 980 = 팔 폭, 40 = 헤일로 여유
+  const fw = IW*sc, fh = IH*sc, top = H - BOT*sc;
   Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
   FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};   // 화면(앱) 좌표의 원화 위치
   clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
