@@ -647,7 +647,7 @@ function runPhase(ph){                                   // 한 단계(집중/�
   clearInterval(tid); tid = setInterval(tickOnce, 1000); keepAwake(true);
   if(ph === 'focus'){ cur = {s:subjOf(), t:Date.now(), sec:0, mins:mins()}; $('subject').disabled = true; if(rig) rig.expr = '';
     setGo('잠시 멈춤', true); setStatus(cur.s + ' · 집중 ' + (rounds + 1) + '/' + ROUNDS); }
-  else { setGo('휴식 건너뛰기', false); setStatus(ph === 'long' ? '한 세트 끝 · 길게 쉬어요' : '잠깐 쉬어요 · 셀레스트도 숨을 고르는 중'); }
+  else { setGo('휴식 건너뛰기', false); setStatus(ph === 'long' ? '한 세트 끝 · 길게 쉬어요' : '잠깐 쉬어요'); }
   paint();
 }
 function tickOnce(){
@@ -683,7 +683,7 @@ function start(){                                        // 큰 버튼
   runPhase('focus');
 }
 function pause(){ mode = 'paused'; clearInterval(tid); keepAwake(false); saveRec();
-  setGo('이어서 집중'); setStatus('석고가 숨을 고르는 중'); paint(); }
+  setGo('이어서 집중'); setStatus('잠시 멈췄어요'); paint(); }
 function giveUp(){ const spent = phase === 'focus' && cur ? Math.floor(cur.sec/60) : 0, was = rounds;
   clearInterval(tid); keepAwake(false); saveRec(); if(phase === 'focus') commit(false); $('subject').disabled = false;
   mode = 'idle'; phase = 'focus'; rounds = 0; total = remain = mins()*60; setGo('집중 시작');

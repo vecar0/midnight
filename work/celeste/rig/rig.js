@@ -17,7 +17,7 @@ window.CelesteRig = async function(cv, opt = {}){
     gaze:{x:0, y:0, tx:0, ty:0, next:0},                      // 눈동자
     blink:{t:-1, next:1.5, double:false},
     roll:{x:0, y:0, vx:0, vy:0, tx:0, next:0},              // 고개 기울기(라디안)
-    smile:0, frown:0, react:0, eyeC:1,
+    smile:0, frown:0, react:0, eyeC:1, shift:{x:0, y:0, next:0}, sigh:{t:-1, next:25}, smileAt:{until:0, next:8},
     torso:{x:0, y:0, vx:0, vy:0},                             // 상체: 고개를 조금 늦게, 조금만 따라온다
     breath:{ph:0, v:0},                                       // 숨: 들숨 짧고 날숨 길게, 박자도 조금씩 다르게
     wind:0, windT:0, windV:0,
@@ -100,19 +100,23 @@ window.CelesteRig = async function(cv, opt = {}){
     const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*.12*opt.motion;   // 쉬는 동안 흔들림은 아주 조금 → 머리카락은 움직임이 있을 때만
     const idleY = Math.sin(t*.29 + 2)*.05;                    // 상하는 확정값 그대로(배율 없음)
     let glance = false;
+    if(t > S.shift.next){ S.shift.x = rnd(-.9, .9)*opt.motion; S.shift.y = rnd(-.015, .015); S.shift.next = t + rnd(1.2, 3.4); }
+    // 한숨: 20~45초에 한 번, 깊게 들이쉬고 고개를 살짝 숙였다 든다
+    if(t > S.sigh.next){ S.sigh.t = t; S.sigh.next = t + rnd(20, 45); }
+    const sg = S.sigh.t < 0 ? 0 : Math.sin(clamp((t - S.sigh.t)/3.2, 0, 1)*Math.PI);
     if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -10, 10)*opt.motion; H.ty = clamp((S.pointer.y - 880)/1500, -.15, .15); }
     else if(t > H.next){ const look = Math.random() < .45; H.tx = (look ? rnd(-9, 9) : rnd(-2, 2))*opt.motion; H.ty = look ? rnd(-.12, .08) : 0; H.next = t + rnd(3, 7.5); glance = look; }
-    spring(H, 7, H.tx + idleX + S.tilt.x*5, H.ty + idleY + S.tilt.y*.1, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
+    spring(H, 7, H.tx + idleX + S.shift.x + S.tilt.x*5, H.ty + idleY + S.shift.y + sg*.06 + S.smile*-.03 + S.tilt.y*.1, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
     // 상체는 고개의 1/4쯤을 늦게 따라온다 → 목이 덜 꺾인다
     spring(S.torso, 4, H.x*.33, 0, dt, 4);
     // 숨: 박자 3.8~4.8초, 들숨 40%·날숨 50%·쉼 10%
     S.breath.ph += dt/(4.3 + Math.sin(t*.11)*.5 + Math.sin(t*.037)*.3);
     const bp = S.breath.ph % 1;
-    S.breath.v = bp < .4 ? sm(0, .4, bp) : 1 - sm(.4, .9, bp);
+    S.breath.v = (bp < .4 ? sm(0, .4, bp) : 1 - sm(.4, .9, bp))*(1 + sg*.8);
     // 기울기: 보는 쪽으로 살짝 + 가끔 갸웃
     const Rl = S.roll;
     if(t > Rl.next){ Rl.tx = rnd(-.012, .012)*opt.motion; Rl.next = t + rnd(3, 7); }
-    spring(Rl, 6, Rl.tx - (H.x - S.torso.x)*.0018 + S.tilt.x*.012 + S.react*.025, 0, dt, 4.9);
+    spring(Rl, 6, Rl.tx - (H.x - S.torso.x)*.0018 + S.tilt.x*.012 + S.react*.025 + S.smile*.014, 0, dt, 4.9);   // 웃을 땐 살짝 갸웃
     // 눈: 고개보다 먼저 휙 움직이고(단속운동), 작은 떨림
     // 눈: 고개보다 먼저 휙(단속운동) → 고개가 따라오면 눈은 조금 돌아온다. 그 사이 아주 작은 떨림
     if(pointing){ G.tx = clamp((S.pointer.x - FACE_X)/45, -6, 6); G.ty = clamp((S.pointer.y - 880)/120, -3, 3); }
@@ -127,9 +131,12 @@ window.CelesteRig = async function(cv, opt = {}){
     // 바람 없음: 머리카락·귀걸이는 고개 움직임에만 반응한다
     S.wind += (S.windV - S.wind)*Math.min(1, dt*1.5); S.windV *= Math.pow(.6, dt);
     // 표정
-    const want = EXPR === 'smile' || S.react > .3 ? 1 : 0;
-    S.smile += (want - S.smile)*Math.min(1, dt*6); S.frown += ((EXPR === 'frown' ? 1 : 0) - S.frown)*Math.min(1, dt*6);
-    S.react = Math.max(0, S.react - dt*.5);
+    if(S.eyeC < .1 && EXPR !== 'frown' && t > S.smileAt.next){ S.smileAt.until = t + rnd(2.8, 5.5); S.smileAt.next = t + rnd(14, 34); }
+    if(S.eyeC > .5) S.smileAt.until = 0;
+    const want = EXPR === 'smile' || S.react > .25 || t < S.smileAt.until ? 1 : 0;
+    S.smile += (want - S.smile)*Math.min(1, dt*(want ? 2.2 : 1.3));            // 번질 땐 0.5초, 사라질 땐 0.8초쯤
+    S.frown += ((EXPR === 'frown' ? 1 : 0) - S.frown)*Math.min(1, dt*3);
+    S.react = Math.max(0, S.react - dt*.22);                                   // 터치하면 3초쯤 웃는다
     // 머리카락 줄기: 뿌리는 고개를 따라가고, 아래 노드는 위 노드를 늦게 따라간다
     for(const h of Object.values(HAIR)) for(const [side, c] of Object.entries(h.chains)){
       const n = c.x.length; c.x[0] = H.x;
