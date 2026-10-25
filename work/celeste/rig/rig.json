@@ -31,6 +31,7 @@
   "strand00",
   "strand01",
   "strand02",
+  "strand02s",
   "earMoon",
   "earStar",
   "front_hair"
@@ -395,6 +396,17 @@
     533
    ],
    "len": 986
+  },
+  "strand02s": {
+   "xy": [
+    733,
+    534
+   ],
+   "size": [
+    313,
+    981
+   ],
+   "group": "underHair"
   }
  }
 }

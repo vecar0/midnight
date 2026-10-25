@@ -182,7 +182,7 @@
       <canvas id="c"></canvas>
       <svg id="haloF"></svg>
     </div>
-    <div id="stageLbl"><b>CÉLESTE</b><span id="stageName">plâtre · 석고</span></div>
+    <div id="stageLbl"><b>CÉLESTE</b><span id="stageName">plâtre</span></div>
     <div id="doves"></div>
   </main>
 
@@ -626,7 +626,7 @@ function paint(){
   $('time').classList.toggle('rest', phase !== 'focus' && mode !== 'idle');
   const p = progress();
   paintMoon(p);
-  $('stageName').textContent = plasterWanted() ? 'plâtre · 석고' : 'éveil · 깨어남';
+  $('stageName').textContent = plasterWanted() ? 'plâtre' : 'éveil';
   $('quit').hidden = mode === 'idle' || mode === 'finished' && phase === 'focus';
   // 세트 표시: ●●○○ + 지금 단계
   const dots = Array.from({length:ROUNDS}, (_, i)=>'<i class="' + (i < rounds ? 'on' : i === rounds && phase === 'focus' && mode !== 'idle' ? 'now' : '') + '"></i>').join('');
