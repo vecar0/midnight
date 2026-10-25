@@ -59,10 +59,21 @@ def save(path, layers, ref_visible=False):
 
 
 empty = lambda: Image.new('RGBA', (W, Y1 - Y0), (0, 0, 0, 0))
+def below(im, y):                       # y(원화 좌표) 아래만 남긴다
+    a = np.array(im); a[:max(0, y - Y0), :, 3] = 0
+    return Image.fromarray(a)
+
+
+# 머리를 원본에서 직접 자르는 용: 몸·얼굴에서 머리카락 조각(rest·restHead·밑판 윗부분)을 뺀다
+clean_body = merge(['neck', 'topwear', 'handwear-r'])
+for n in ('rest', 'under'):
+    clean_body = Image.alpha_composite(below(full(n), 2040), clean_body)
+clean_face = merge(['ears-l', 'ears-r', 'face', 'mouth', 'nose', 'eyebrow-r', 'eyebrow-l',
+                    'eyelash-r', 'eyewhite-r', 'eyewhite-l', 'irides-r', 'irides-l', 'eyelash-l'])
 save(ROOT / 'work/celeste/procreate/celeste_hair_cut.psd', [
-    ('BODY (do not edit)', layers[0][1]),
+    ('BODY (do not edit)', clean_body),
     ('HAIR BACK', empty()),
-    ('FACE (do not edit)', layers[2][1]),
+    ('FACE (do not edit)', clean_face),
     ('EARRINGS (do not edit)', layers[3][1]),
     ('HAIR SIDE R', empty()),
     ('HAIR SIDE L', empty()),
