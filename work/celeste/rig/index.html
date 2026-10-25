@@ -26,6 +26,7 @@ const S = {
   head:{x:0, y:0, vx:0, vy:0, tx:0, ty:0, next:0},        // 고개(시선 방향) — 스프링으로 목표를 따라감
   gaze:{x:0, y:0, tx:0, ty:0, next:0},                      // 눈동자
   blink:{t:-1, next:1.5, double:false},
+  roll:{x:0, y:0, vx:0, vy:0, tx:0, next:0},              // 고개 기울기(라디안)
   smile:0, frown:0, react:0,
   wind:0, windT:0, windV:0,
   tilt:{x:0, y:0}, pointer:null, lastT:null,
@@ -104,6 +105,10 @@ function simulate(t, dt){
   if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -11, 11); H.ty = clamp((S.pointer.y - 880)/120, -5, 5); }
   else if(t > H.next){ const calm = Math.random() < .35; H.tx = calm ? rnd(-2, 2) : rnd(-10, 10); H.ty = calm ? 0 : rnd(-4, 3); H.next = t + rnd(2, 5.5); }
   spring(H, 22, H.tx + S.tilt.x*8, H.ty + S.tilt.y*4, dt, 8.5);
+  // 기울기: 보는 쪽으로 살짝 + 가끔 갸웃
+  const Rl = S.roll;
+  if(t > Rl.next){ Rl.tx = rnd(-.02, .02); Rl.next = t + rnd(2.5, 6); }
+  spring(Rl, 16, Rl.tx - H.x*.0016 + S.tilt.x*.02 + S.react*.03, 0, dt, 7.5);
   // 눈: 고개보다 먼저 휙 움직이고(단속운동), 작은 떨림
   if(pointing){ G.tx = clamp((S.pointer.x - FACE_X)/45, -6, 6); G.ty = clamp((S.pointer.y - 880)/120, -3, 3); }
   else if(t > G.next){ G.tx = H.tx*.8 + rnd(-2.5, 2.5); G.ty = H.ty*.6 + rnd(-1.2, 1.2); G.next = t + rnd(.6, 2.8); }
@@ -131,30 +136,47 @@ function simulate(t, dt){
   }
   // 귀걸이: 고개가 움직인 가속도를 받는 진자
   for(const e of Object.values(EAR)){
-    const acc = -H.vx*.02 - S.wind*.0012;
+    const acc = -H.vx*.02 - S.roll.vx*6 - S.wind*.0012;
     e.v += (-e.a*38/e.len + acc*30 - e.v*2.2)*dt; e.a += e.v*dt; e.a = clamp(e.a, -.45, .45);
   }
 }
 function breathAt(t){ return (Math.sin(t*1.5)*.5 + .5); }
 
 // ---------- 자세 ----------
-function headOffset(t){ const b = breathAt(t)*3.5; return [Math.round(S.head.x), Math.round(S.head.y - b)]; }
+// 머리는 얼굴·이목구비·귀·귀걸이 고리·앞머리 뿌리를 한 덩어리로: 목을 축으로 살짝 기울고(roll) 옮겨진다.
+// 휘지 않고 덩어리째 움직이므로 요소가 뭉개지지 않는다. 값은 소수점까지 부드럽게.
+const NECK = [650, 1150];
+let HT = {c:1, s:0, x:0, y:0};
+function headXform(t){
+  const a = S.roll.x;
+  HT = {c:Math.cos(a), s:Math.sin(a), x:S.head.x, y:S.head.y - breathAt(t)*3.5};
+}
+function hp(x, y){                                          // 쉬는 자세의 점 → 머리를 따라 움직인 점
+  const dx = x - NECK[0], dy = y - NECK[1];
+  return [NECK[0] + dx*HT.c - dy*HT.s + HT.x, NECK[1] + dx*HT.s + dy*HT.c + HT.y];
+}
+function headRigid(m, ox, oy){ for(let k=0;k<m.rest.length;k+=2){ const q = hp(m.rest[k], m.rest[k+1]); m.pos[k] = q[0] + (ox||0); m.pos[k+1] = q[1] + (oy||0); } }
 function rigid(m, dx, dy){ for(let k=0;k<m.rest.length;k+=2){ m.pos[k] = m.rest[k] + dx; m.pos[k+1] = m.rest[k+1] + dy; } }
+function poseNeck(m, by){                                   // 목: 위쪽은 머리를, 아래쪽은 몸을 따라간다 (턱 밑 이음새가 안 보이게)
+  for(let k=0;k<m.rest.length;k+=2){ const x = m.rest[k], y = m.rest[k+1], w = (1 - sm(990, 1175, y))*.9, q = hp(x, y);
+    m.pos[k] = x*(1-w) + q[0]*w; m.pos[k+1] = (y + by)*(1-w) + q[1]*w; }
+}
 function chainAt(c, s){ const n = c.x.length, f = s*(n-1), i = Math.min(n-2, Math.floor(f)), r = f - i; return c.x[i]*(1-r) + c.x[i+1]*r; }
-function poseHair(m, h, t){
-  const [hx, hy] = headOffset(t);
+function poseHair(m, h){
   for(let k=0;k<m.rest.length;k+=2){
     const x = m.rest[k], y = m.rest[k+1], s = clamp((y - h.root)/h.len, 0, 1), w = Math.pow(s, 1.25);
     const side = sm(FACE_X - 120, FACE_X + 120, x);           // 왼쪽 줄기 0 … 오른쪽 줄기 1
-    const cx = chainAt(h.chains.L, s)*(1-side) + chainAt(h.chains.R, s)*side;
-    const dx = hx*(1-w) + cx*w, rel = dx - hx;
-    m.pos[k] = x + dx; m.pos[k+1] = y + hy*(1 - s*.6) - .5*rel*rel/(y - h.root + 90);
+    const sway = (chainAt(h.chains.L, s)*(1-side) + chainAt(h.chains.R, s)*side) - S.head.x;
+    const q = hp(x, y);                                       // 뿌리 쪽은 머리와 한 덩어리
+    const hx = x + HT.x, hy = y + HT.y*(1 - s*.6);            // 끝 쪽은 기울지 않고 아래로 늘어진다
+    const px = q[0]*(1-w) + hx*w + sway*w, py = q[1]*(1-w) + hy*w;
+    m.pos[k] = px; m.pos[k+1] = py - .5*(sway*w)*(sway*w)/(y - h.root + 90);
   }
 }
-function poseEar(m, e, t){
-  const [hx, hy] = headOffset(t), [px, py] = e.pivot, c = Math.cos(e.a), s = Math.sin(e.a);
-  for(let k=0;k<m.rest.length;k+=2){ const dx = m.rest[k]-px, dy = m.rest[k+1]-py;
-    m.pos[k] = px + hx + dx*c - dy*s; m.pos[k+1] = py + hy + dx*s + dy*c; }
+function poseEar(m, e){
+  const [px, py] = hp(e.pivot[0], e.pivot[1]), c = Math.cos(e.a), s = Math.sin(e.a);   // 고리는 머리를 따라, 몸통은 늘어진다
+  for(let k=0;k<m.rest.length;k+=2){ const dx = m.rest[k]-e.pivot[0], dy = m.rest[k+1]-e.pivot[1];
+    m.pos[k] = px + dx*c - dy*s; m.pos[k+1] = py + dx*s + dy*c; }
 }
 
 // ---------- 그리기 ----------
@@ -163,7 +185,7 @@ function draw(t, stage){
   if(dt > 0) for(let i=0;i<2;i++) simulate(t, dt/2);
   gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
   gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
-  const [hx, hy] = headOffset(t), b = breathAt(t);
+  headXform(t); const b = breathAt(t);
   const B = S.blink, bt = B.t < 0 ? 1 : (t - B.t);
   const one = p=>p < .07 ? p/.07 : p < .11 ? 1 : p < .22 ? 1 - (p-.11)/.11 : 0;          // 감기 빠르게, 뜨기 천천히
   const blink = B.t < 0 ? 0 : Math.max(one(bt), B.double ? one(bt - .26) : 0);
@@ -173,14 +195,14 @@ function draw(t, stage){
     const m = M[name], g = RIG.layers[name]?.group || m.group;
     let a = 1;
     if(g === 'static') rigid(m, 0, 0);
-    else if(g === 'body') rigid(m, 0, -Math.round(b*2.5));
-    else if(g === 'arms') rigid(m, 0, -Math.round(b*.8));
-    else if(g === 'hairFront' || g === 'hairBack') poseHair(m, HAIR[name], t);
-    else if(g === 'earring') poseEar(m, EAR[name], t);
-    else if(g === 'ears') rigid(m, hx - Math.round(S.head.x*.25), hy);                   // 귀는 고개와 반대로 살짝 (입체감)
-    else if(g === 'iris') rigid(m, hx + S.gaze.x, hy + S.gaze.y);
-    else if(g === 'patch'){ rigid(m, hx, hy); a = name === 'eyes_closed' ? closed : name === 'mouth_smile' ? S.smile : S.frown; if(a <= .001) continue; }
-    else rigid(m, hx, hy);                                                                  // 얼굴·이목구비: 통째로
+    else if(name === 'neck') poseNeck(m, -b*2.5);
+    else if(g === 'body') rigid(m, 0, -b*2.5);
+    else if(g === 'arms') rigid(m, 0, -b*.8);
+    else if(g === 'hairFront' || g === 'hairBack') poseHair(m, HAIR[name]);
+    else if(g === 'earring') poseEar(m, EAR[name]);
+    else if(g === 'iris') headRigid(m, S.gaze.x, S.gaze.y);
+    else if(g === 'patch'){ headRigid(m); a = name === 'eyes_closed' ? closed : name === 'mouth_smile' ? S.smile : S.frown; if(a <= .001) continue; }
+    else headRigid(m);                                                                      // 얼굴·이목구비·귀·머리 조각: 통째로
     gl.uniform1f(U.alpha, a);
     if(g === 'iris'){ const ew = RIG.layers[name.replace('irides', 'eyewhite')];
       gl.uniform1f(U.isIris, 1); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, T[name.replace('irides', 'eyewhite')]);
@@ -217,7 +239,7 @@ function draw(t, stage){
     else { [x0, y0] = PARTS.patches[n]; w = imgs[n].naturalWidth; h = imgs[n].naturalHeight; }
     const g = RIG.layers[n]?.group;
     const hair = g === 'hairFront' || g === 'hairBack';
-    M[n] = mesh(n, x0, y0, w, h, hair ? 14 : 1, hair ? 64 : 1);         // 머리카락만 촘촘한 그물, 나머지는 사각형 하나(휘지 않음)
+    M[n] = mesh(n, x0, y0, w, h, hair ? 14 : 1, hair ? 64 : n === 'neck' ? 12 : 1);   // 머리카락(과 목)만 그물, 나머지는 사각형 하나(휘지 않음)
     if(!RIG.layers[n]) M[n].group = 'patch';
   }
   const sl = document.getElementById('stage'), sv = document.getElementById('sv');

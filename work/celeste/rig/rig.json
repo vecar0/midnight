@@ -6,6 +6,7 @@
  "order": [
   "under",
   "back_hair",
+  "restHead",
   "neck",
   "topwear",
   "ears-l",
@@ -31,11 +32,11 @@
   "under": {
    "xy": [
     0,
-    399
+    1103
    ],
    "size": [
     1228,
-    2017
+    1313
    ],
    "group": "static"
   },
@@ -49,6 +50,17 @@
     1043
    ],
    "group": "hairBack"
+  },
+  "restHead": {
+   "xy": [
+    225,
+    399
+   ],
+   "size": [
+    751,
+    759
+   ],
+   "group": "head"
   },
   "neck": {
    "xy": [
@@ -130,11 +142,11 @@
   "rest": {
    "xy": [
     0,
-    399
+    1103
    ],
    "size": [
     1228,
-    2017
+    1313
    ],
    "group": "static"
   },

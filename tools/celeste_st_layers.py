@@ -22,10 +22,11 @@ SQ = 1520                    # seethrough_input.png 크기
 OX, OY = 146, 620            # 입력 그림 좌표 → 원화 좌표: x - OX, y + OY
 FACE_X = 650                 # 얼굴 가운데 x (귀걸이 좌우 나누기)
 RAIL_Y = 2040                # 이 아래는 난간·허리 (움직이지 않는 레이어)
+NECK_Y = 1130                # 이 위는 머리 (고개와 같이 움직임)
 
 # 레이어별 무리: 리깅에서 같이 움직이는 단위
 GROUP = {'back_hair': 'hairBack', 'front_hair': 'hairFront', 'neck': 'body', 'topwear': 'body',
-         'handwear-l': 'body', 'handwear-r': 'arms', 'rest': 'static',
+         'handwear-l': 'body', 'handwear-r': 'arms', 'rest': 'static', 'restHead': 'head',
          'face': 'face', 'ears-l': 'ears', 'ears-r': 'ears', 'mouth': 'feature', 'nose': 'feature',
          'eyebrow-l': 'feature', 'eyebrow-r': 'feature', 'eyelash-l': 'feature', 'eyelash-r': 'feature',
          'eyewhite-l': 'eyewhite', 'eyewhite-r': 'eyewhite', 'irides-l': 'iris', 'irides-r': 'iris',
@@ -105,8 +106,14 @@ def main():
         L[n] = [rgb, a]
         remain *= 1 - L[n][1]
 
-    # 맨 아래 밑판: 원화 전체 (레이어끼리 벌어진 틈으로 배경 대신 원래 그림이 보이게)
-    L['under'] = [orig.copy(), oa * .995]
+    # 'rest' 중 머리 쪽 조각은 고개와 같이 움직이게 따로 (고정해 두면 고개만 움직일 때 떨어져 보인다)
+    headw = (1 - np.clip((yy - (NECK_Y - 30)) / 60, 0, 1)).astype(np.float32)
+    rgb, a = L['rest']
+    L['restHead'] = [rgb.copy(), a * headw]
+    L['rest'] = [rgb, a * (1 - headw)]
+    order.insert(order.index('back_hair') + 1, 'restHead')
+    # 맨 아래 밑판: 몸통 쪽 원화만 (머리까지 깔면 고개가 움직일 때 원래 머리 윤곽이 뒤에 겹쳐 보인다)
+    L['under'] = [orig.copy(), oa * .995 * (1 - headw)]
     order.insert(0, 'under')
     GROUP['under'] = 'static'
 
