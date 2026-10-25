@@ -31,10 +31,18 @@ for a, b in [('<script src="../rig/rig.js"></script>', '<script src="./rig/rig.j
     s = s.replace(a, b)
 s = s.replace('<title>Bleu Minuit</title>', '<title>Bleu Minuit</title>\n<link rel="manifest" href="manifest.webmanifest">\n'
               '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n<link rel="icon" href="icon-192.png">\n'
-              '<meta name="apple-mobile-web-app-title" content="Bleu Minuit">')
+              '<meta name="apple-mobile-web-app-title" content="Bleu Minuit">\n<meta name="mobile-web-app-capable" content="yes">')
 (DST / 'index.html').write_text(s)
 for f in ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png']:                 # 앱 아이콘(work/celeste/app/icons)
     shutil.copy(SRC / f'app/icons/{f}', DST / f)
+# 홈 화면 앱 설정 — 원래 Minuit 앱과 같게 fullscreen (standalone 이면 iOS가 상태 표시줄만큼 화면을 짧게 줘서 아래가 빈다)
+(DST / 'manifest.webmanifest').write_text(json.dumps({
+    "name": "Bleu Minuit", "short_name": "Bleu Minuit", "id": "./", "start_url": "./", "scope": "./",
+    "display": "fullscreen", "display_override": ["fullscreen", "standalone"], "orientation": "any",
+    "background_color": "#e9e8e3", "theme_color": "#e9e8e3",
+    "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+              {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+              {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}, ensure_ascii=False, indent=1))
 files += ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
 
 # 캐시 버전 +1 (안 올리면 이미 설치된 홈 화면 앱이 옛 그림을 계속 쓴다)
