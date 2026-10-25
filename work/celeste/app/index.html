@@ -741,7 +741,7 @@ setTimeout(fit, 400); setTimeout(fit, 1500);      // iOS는 처음 높이를 늦
 if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ═══ 시작 ═══ */
-let rig = null;
+let rig = null, shown = 0;
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
@@ -750,8 +750,9 @@ let rig = null;
   $('loading').remove();
   window.rig = rig;
   const loop = ms=>{
-    rig.plaster = plasterWanted() ? 1 : 0;                           // 집중 중엔 살아 움직이고, 그 밖엔 석고로 굳는다
-    rig.draw(ms/1000, 1);
+    // 집중 중엔 색이 서서히 돌아오고(눈을 뜸), 시작 전·휴식·멈춤엔 서서히 회색 석고 상태로 돌아간다
+    shown += ((plasterWanted() ? 0 : 1) - shown) * .025;
+    rig.draw(ms/1000, shown);
     drawHalo(ms/1000, progress(), rig.S.head, rig.S.roll.x);         // 헤일로는 머리를 따라 움직이고 계속 돈다
     requestAnimationFrame(loop);
   };
