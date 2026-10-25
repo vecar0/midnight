@@ -211,7 +211,7 @@ const OBJS = ['angel','arch','armillary','astronaut','birdcage','book','bust','c
 const PARTS = '../parts/';
 // 원화(1228×2416)에서 무대에 보일 세로 범위: 머리 위 ~ 난간 아래
 const IW = 1228, IH = 2416, VIEW_Y0 = 330, VIEW_Y1 = 2150;
-const HALO = {x:650, y:470, rx:340};          // 원화 좌표, 정수리를 감싸는 높이
+const HALO = {x:618, y:478, rx:330, rot:-11};    // 원화 좌표, 정수리를 감싸는 높이·그림 속 머리 기울기
 
 /* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
 function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
@@ -452,8 +452,9 @@ const STARS = 8, svgNS = 'http://www.w3.org/2000/svg';
 let haloStars = [];
 function buildHalo(){
   const s = HALO.rx/RING.rx, X = v => HALO.x + (v - RING.cx)*s, Y = v => HALO.y + (v - RING.cy)*s;
-  $('haloB').innerHTML = `<g id="hb"><image href="${PARTS}halo_back.webp" x="${X(20)}" y="${Y(113)}" width="${1300*s}" height="${180*s}"/><g id="hbS"></g></g>`;
-  $('haloF').innerHTML = `<g id="hf"><image href="${PARTS}halo_front.webp" x="${X(20)}" y="${Y(284)}" width="${1300*s}" height="${183*s}"/><g id="hfS"></g></g>`;
+  const tilt = `rotate(${HALO.rot} ${HALO.x} ${HALO.y})`;                   // 그림 속 머리 기울기에 맞춤
+  $('haloB').innerHTML = `<g id="hb"><g transform="${tilt}"><image href="${PARTS}halo_back.webp" x="${X(20)}" y="${Y(113)}" width="${1300*s}" height="${180*s}"/><g id="hbS"></g></g></g>`;
+  $('haloF').innerHTML = `<g id="hf"><g transform="${tilt}"><image href="${PARTS}halo_front.webp" x="${X(20)}" y="${Y(284)}" width="${1300*s}" height="${183*s}"/><g id="hfS"></g></g></g>`;
   haloStars = Array.from({length:STARS}, ()=>{ const im = document.createElementNS(svgNS, 'image'); im.setAttribute('href', PARTS + 'halo_star.webp'); im._blue = false; return im; });
 }
 function drawHalo(t, p, head, roll){
