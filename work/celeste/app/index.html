@@ -606,7 +606,9 @@ let pomo = 0, phase = 'focus', rounds = 0;          // rounds = 이번 세트에
 let total = 1500, remain = 1500, endAt = 0, mode = 'idle', tid = null, wake = null;
 try{ pomo = clamp(+localStorage.getItem('bleu.pomo') || 0, 0, POMO.length - 1); }catch(e){}
 const mins = () => POMO[pomo][0];
-const STAGES = [[0,'plâtre · 석고'],[.25,'craquelure · 금'],[.5,'aube · 새벽빛'],[.75,'bleu · 푸름'],[1,'minuit · 자정']];
+// 셀레스트: 집중 중엔 살아 움직이고, 시작 전·휴식·멈춤엔 석고로 굳는다. 집중이 막 끝나면 잠깐(미소 볼 시간) 뒤에 굳는다
+let focusEndAt = 0;
+const plasterWanted = () => !(mode === 'run' && phase === 'focus') && Date.now() - focusEndAt > 2600;
 function progress(){
   if(mode === 'finished') return 1;
   if(mode === 'idle') return 0;
@@ -619,7 +621,7 @@ function paint(){
   $('time').classList.toggle('rest', phase !== 'focus' && mode !== 'idle');
   const p = progress();
   paintMoon(p);
-  $('stageName').textContent = STAGES.filter(x=>p >= x[0]).pop()[1];
+  $('stageName').textContent = plasterWanted() ? 'plâtre · 석고' : 'éveil · 깨어남';
   $('quit').hidden = mode === 'idle' || mode === 'finished' && phase === 'focus';
   // 세트 표시: ●●○○ + 지금 단계
   const dots = Array.from({length:ROUNDS}, (_, i)=>'<i class="' + (i < rounds ? 'on' : i === rounds && phase === 'focus' && mode !== 'idle' ? 'now' : '') + '"></i>').join('');
@@ -652,6 +654,7 @@ function tickOnce(){
 function phaseEnd(){
   clearInterval(tid);
   if(phase === 'focus'){
+    focusEndAt = Date.now(); setTimeout(paint, 2700);
     rounds++; rec.done++; rec.best = Math.max(rec.best, mins()); commit(true); $('subject').disabled = false;
     if(rounds >= ROUNDS){                                // 세트 완주: 색을 다 되찾고 긴 휴식
       tone([523.25, 659.25, 783.99, 1046.5], 1.4); if(rig) rig.expr = 'smile'; doves(); toast('Bleu Minuit', 3000);
@@ -738,7 +741,7 @@ setTimeout(fit, 400); setTimeout(fit, 1500);      // iOS는 처음 높이를 늦
 if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 /* ═══ 시작 ═══ */
-let rig = null, shown = 0;
+let rig = null;
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
@@ -747,10 +750,8 @@ let rig = null, shown = 0;
   $('loading').remove();
   window.rig = rig;
   const loop = ms=>{
-    // 색은 진행도를 천천히 따라간다 (끝나면 완전히, 대기 중엔 석고)
-    const want = mode === 'finished' ? 1 : progress();
-    shown += (want - shown) * .04;
-    rig.draw(ms/1000, shown);
+    rig.plaster = plasterWanted() ? 1 : 0;                           // 집중 중엔 살아 움직이고, 그 밖엔 석고로 굳는다
+    rig.draw(ms/1000, 1);
     drawHalo(ms/1000, progress(), rig.S.head, rig.S.roll.x);         // 헤일로는 머리를 따라 움직이고 계속 돈다
     requestAnimationFrame(loop);
   };
