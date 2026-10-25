@@ -71,6 +71,30 @@ def do_import(path):
     apply()
 
 
+def import_pdf(path, name):
+    """프로크리에이트에서 레이어 하나를 PDF로 내보낸 파일 → 그 레이어 덮어쓰기용 PNG.
+    PDF 쪽(page)은 캔버스 전체에 해당하므로, 안에 든 그림을 쪽 안의 자리 비율대로 캔버스에 놓는다."""
+    import fitz                                    # pip install pymupdf
+    m = meta(); W, _ = m['size']; CH = Y1 - Y0
+    doc = fitz.open(path); page = doc[0]; pw, ph = page.rect.width, page.rect.height
+    c = Image.new('RGBA', (W, CH), (0, 0, 0, 0))
+    for info in page.get_images(full=True):
+        xref, smask = info[0], info[1]
+        pix = fitz.Pixmap(doc, xref)
+        if smask:
+            pix = fitz.Pixmap(pix, fitz.Pixmap(doc, smask))
+        if pix.n - pix.alpha > 3:
+            pix = fitz.Pixmap(fitz.csRGB, pix)
+        im = Image.frombytes('RGBA' if pix.alpha else 'RGB', (pix.width, pix.height), pix.samples).convert('RGBA')
+        for r in page.get_image_rects(xref):
+            x0 = round(r.x0 / pw * W); y0 = round(r.y0 / ph * CH)
+            w = round(r.width / pw * W); h = round(r.height / ph * CH)
+            c.alpha_composite(im.resize((w, h), Image.LANCZOS) if (w, h) != im.size else im, (x0, y0))
+    OVR.mkdir(exist_ok=True)
+    c.save(OVR / f'{name}.png')
+    print('PDF 들여옴:', name, Path(path).name)
+
+
 def apply():
     if not OVR.exists():
         return
@@ -94,5 +118,10 @@ if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else ''
     if cmd == 'export': export()
     elif cmd == 'import': do_import(sys.argv[2])
+    elif cmd == 'import-pdf':                      # import-pdf 파일.pdf 레이어이름 [파일.pdf 레이어이름 ...]
+        args = sys.argv[2:]
+        for p, n in zip(args[::2], args[1::2]):
+            import_pdf(p, n)
+        apply()
     elif cmd == 'apply': apply()
     else: sys.exit(__doc__)

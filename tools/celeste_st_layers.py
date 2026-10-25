@@ -238,9 +238,29 @@ def main():
         for c in range(3):                                       # 색을 원화에 맞춘다
             k_, b_ = np.polyfit(uw[..., c][ring], orig[..., c][ring], 1)
             uw[..., c] = np.clip(uw[..., c] * k_ + b_, 0, 255)
-        ua_ = (uw.min(axis=2) < 238).astype(np.float32)          # 편집본의 흰 배경은 뺀다
-        ua_ = cv2.GaussianBlur(cv2.morphologyEx(ua_, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)), (0, 0), 1)
+        # 편집본의 흰 배경과 그 가장자리 밝은 테두리는 뺀다 (배경에서 이어진 밝은 무채색 픽셀 전부)
+        light = ((uw.min(axis=2) > 185) & (uw.max(axis=2) - uw.min(axis=2) < 25)).astype(np.uint8)
+        n_, lab_ = cv2.connectedComponents(light)
+        bgid = set(np.unique(np.concatenate([lab_[0], lab_[-1], lab_[:, 0], lab_[:, -1]]))) - {0}
+        bgm = cv2.dilate(np.isin(lab_, list(bgid)).astype(np.uint8), np.ones((5, 5), np.uint8))
+        ua_ = cv2.GaussianBlur(1 - bgm.astype(np.float32), (0, 0), 1)
         earm = ((L['earMoon'][1] > .1) | (L['earStar'][1] > .1)).astype(np.uint8)    # 귀걸이 뒤도 귀걸이 없는 그림으로
+        # 귀걸이 자리는 얼굴만 크게 잘라 귀걸이만 지운 편집본(ears_off_edit.png)이 더 자연스러우면 그걸로
+        ep = ROOT / 'work/celeste/ears_off_edit.png'
+        if ep.exists():
+            fx0, fy0, fx1, fy1 = 380, 560, 980, 1200                      # 얼굴 크롭 영역 (반 크기 좌표)
+            e = cv2.imread(str(ep)); e = cv2.resize(e, (fx1 - fx0, round(e.shape[0] * (fx1 - fx0) / e.shape[1])), interpolation=cv2.INTER_AREA)
+            ref = src_w[fy0:fy1, fx0:fx1]
+            keepm = (1 - cv2.dilate(earm[fy0:fy1, fx0:fx1], np.ones((41, 41), np.uint8))) * 255
+            ka, da = sift.detectAndCompute(cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY), keepm.astype(np.uint8))
+            kb, db = sift.detectAndCompute(cv2.cvtColor(e, cv2.COLOR_BGR2GRAY), None)
+            gd = [m for m, n in cv2.BFMatcher().knnMatch(db, da, k=2) if m.distance < .7 * n.distance]
+            Me, _ = cv2.estimateAffinePartial2D(np.float32([kb[m.queryIdx].pt for m in gd]), np.float32([ka[m.trainIdx].pt for m in gd]), ransacReprojThreshold=2)
+            ew = cv2.warpAffine(e, Me, (fx1 - fx0, fy1 - fy0), flags=cv2.INTER_AREA, borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
+            kk = cv2.GaussianBlur(cv2.dilate(earm[fy0:fy1, fx0:fx1], np.ones((21, 21), np.uint8)).astype(np.float32), (0, 0), 4)[..., None]
+            uw[fy0:fy1, fx0:fx1] = uw[fy0:fy1, fx0:fx1] * (1 - kk) + ew * kk
+            ua_[fy0:fy1, fx0:fx1] = np.maximum(ua_[fy0:fy1, fx0:fx1], kk[..., 0])
+            print('귀걸이 자리 편집본 정렬 점', len(gd))
         reg = cv2.GaussianBlur(cv2.dilate(hole | earm, np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
         ar = (reg * ua_ * (yy < RAIL_Y)).astype(np.float32)
         ys_, xs_ = np.where(ar > .01); x0, x1, y0, y1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
