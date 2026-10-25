@@ -110,7 +110,7 @@
     #go,#quit{height:42px}
     #stats{margin-top:8px;padding-top:6px} #stats b{font-size:16px}
     #stage{grid-column:2;grid-row:1/3}
-    #bottom{grid-column:1;grid-row:2;margin:0 0 calc(8px + env(safe-area-inset-bottom)) 14px;padding:26px 12px 10px;align-self:end;border:1px solid var(--ink)}
+    #bottom{grid-column:1;grid-row:2;margin:0 0 20px 14px;padding:26px 12px 8px;align-self:end;border:1px solid var(--ink);border-bottom:0}
     #recent{display:none}
   }
   /* ── 달력 ── */
@@ -156,6 +156,11 @@
   #calClose{display:block;width:100%;margin-top:16px;height:46px;border:1px solid var(--ink);background:#fff;letter-spacing:.2em}
   #recent button.ok{color:#888;border-color:var(--bleu);text-decoration:line-through;text-decoration-color:var(--bleu)}
   #recent button.add{border-style:dashed}
+  #stageBand{display:none}
+  @media (orientation:landscape) and (max-height:600px){
+    #stageBand{display:block;position:absolute;left:0;right:0;bottom:0;height:20px;z-index:8;border-top:1px solid var(--ink);
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 0L20 10 10 20 0 10Z' fill='%231E22D6'/%3E%3C/svg%3E") 0 0/20px 20px repeat-x,#fff}
+  }
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
 </style></head><body>
 <div id="app">
@@ -184,6 +189,7 @@
   </main>
 
   <div id="fgo" class="layer"></div><svg id="fg1" class="layer"></svg>
+  <div id="stageBand"></div>
   <footer id="bottom">
     <div id="status">시간을 고르고 시작하세요</div>
     <div id="btns"><button id="go">집중 시작</button><button id="quit" hidden>그만두기</button></div>
@@ -729,14 +735,13 @@ function fit(){
   const h = appH() + 'px';
   for(const el of [document.documentElement, document.body, $('app')]){ el.style.height = h; el.style.minHeight = h; }
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
-  const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
-  // 세로: 팔짱 아래(원화 y 1950)부터는 아래 패널 뒤로 숨겨서 그만큼 캐릭터를 크게. 가로: 난간까지 보이게
-  const BOT = land ? VIEW_Y1 : 1950;
-  const sc = land ? Math.min(H / (VIEW_Y1 - VIEW_Y0) * .9, st.clientWidth*.86 / 980)
-                  : Math.min(H / (BOT - VIEW_Y0 + 40), st.clientWidth*.94 / 980);   // 980 = 팔 폭, 40 = 헤일로 여유
+  // 난간 윗선(원화 y 2018)을 아래 띠(세로: 패널 위 마름모 띠 / 가로: 무대 아래 띠)에 딱 맞춘다 → 팔짱 낀 팔이 띠 위에 얹힌 모양
+  const H = (land ? st.clientHeight - 20 : $('bottom').getBoundingClientRect().top - st.getBoundingClientRect().top) + 2, BOT = 2018;   // 띠 윗선까지
+  const sc = Math.min(H / (BOT - VIEW_Y0 + 40), st.clientWidth*(land ? .86 : .94) / 980);   // 980 = 팔 폭, 40 = 헤일로 여유
   const fw = IW*sc, fh = IH*sc, top = H - BOT*sc;
   Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
-  FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};   // 화면(앱) 좌표의 원화 위치
+  FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};
+  if(rig) rig.motion = clamp(.5/sc, 1, 2.4);        // 작게 그려질수록 움직임을 키운다(리깅은 0.5배 크기에서 맞춤)   // 화면(앱) 좌표의 원화 위치
   clearTimeout(fit.t); fit.t = setTimeout(()=>buildCollage().catch(e=>console.warn('collage', e)), 120);
 }
 addEventListener('resize', fit); addEventListener('orientationchange', ()=>setTimeout(fit, 300)); addEventListener('pageshow', fit);
@@ -753,7 +758,7 @@ let rig = null, shown = 0;
   buildHalo(); drawHalo(0, 0, {x:0, y:0}, 0);
   rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
   $('loading').remove();
-  window.rig = rig;
+  window.rig = rig; fit();
   const loop = ms=>{
     // 집중 중엔 색이 서서히 돌아오고(눈을 뜸), 시작 전·휴식·멈춤엔 서서히 회색 석고 상태로 돌아간다
     shown += ((plasterWanted() ? 0 : 1) - shown) * .025;

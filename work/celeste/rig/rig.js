@@ -5,6 +5,7 @@ window.CelesteRig = async function(cv, opt = {}){
   // Céleste 리깅: See-through 레이어(가려진 부분까지 있음) + 원화 색.
   // 얼굴·이목구비·귀걸이는 절대 휘지 않고 통째로만 옮긴다. 휘는 건 머리카락 끝뿐.
   const R = opt.base || './', P = opt.parts || '../parts/';
+  opt.motion = opt.motion || 1;                             // 움직임 크기 배율: 작게 그려질 땐 키워야 살아 보인다
   const gl = cv.getContext('webgl', {premultipliedAlpha:true, alpha:true, antialias:true, preserveDrawingBuffer:!!opt.capture});
   const sm = (a,b,x)=>{ const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
   const clamp = (v,a,b)=>Math.max(a, Math.min(b, v));
@@ -96,11 +97,11 @@ window.CelesteRig = async function(cv, opt = {}){
     // 고개: 가끔 다른 곳을 본다. 손가락이 최근에 움직였으면 그쪽을 본다
     const pointing = S.pointer && Number.isFinite(S.pointer.x) && performance.now() - S.pointer.t < 2500;
     // 가만히 있어도 여러 느린 흔들림이 겹쳐 미세하게 움직이고, 가끔 천천히 다른 곳을 본다
-    const idleX = Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55;
-    const idleY = Math.sin(t*.29 + 2)*.05;
+    const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*opt.motion;
+    const idleY = Math.sin(t*.29 + 2)*.05*opt.motion;
     let glance = false;
-    if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -10, 10); H.ty = clamp((S.pointer.y - 880)/1500, -.15, .15); }
-    else if(t > H.next){ const look = Math.random() < .45; H.tx = look ? rnd(-9, 9) : rnd(-2, 2); H.ty = look ? rnd(-.12, .08) : 0; H.next = t + rnd(3, 7.5); glance = look; }
+    if(pointing){ H.tx = clamp((S.pointer.x - FACE_X)/60, -10, 10)*opt.motion; H.ty = clamp((S.pointer.y - 880)/1500, -.15, .15)*opt.motion; }
+    else if(t > H.next){ const look = Math.random() < .45; H.tx = (look ? rnd(-9, 9) : rnd(-2, 2))*opt.motion; H.ty = (look ? rnd(-.12, .08) : 0)*opt.motion; H.next = t + rnd(3, 7.5); glance = look; }
     spring(H, 7, H.tx + idleX + S.tilt.x*5, H.ty + idleY + S.tilt.y*.1, dt, 5.3);    // 느리고 부드럽게 (거의 임계 감쇠)
     // 상체는 고개의 1/4쯤을 늦게 따라온다 → 목이 덜 꺾인다
     spring(S.torso, 4, H.x*.33, 0, dt, 4);
@@ -110,7 +111,7 @@ window.CelesteRig = async function(cv, opt = {}){
     S.breath.v = bp < .4 ? sm(0, .4, bp) : 1 - sm(.4, .9, bp);
     // 기울기: 보는 쪽으로 살짝 + 가끔 갸웃
     const Rl = S.roll;
-    if(t > Rl.next){ Rl.tx = rnd(-.012, .012); Rl.next = t + rnd(3, 7); }
+    if(t > Rl.next){ Rl.tx = rnd(-.012, .012)*opt.motion; Rl.next = t + rnd(3, 7); }
     spring(Rl, 6, Rl.tx - (H.x - S.torso.x)*.0018 + S.tilt.x*.012 + S.react*.025, 0, dt, 4.9);
     // 눈: 고개보다 먼저 휙 움직이고(단속운동), 작은 떨림
     // 눈: 고개보다 먼저 휙(단속운동) → 고개가 따라오면 눈은 조금 돌아온다. 그 사이 아주 작은 떨림
@@ -153,7 +154,7 @@ window.CelesteRig = async function(cv, opt = {}){
       e.v += (-e.a*45/e.len + acc*30 - e.v*4.5)*dt; e.a += e.v*dt; e.a = clamp(e.a, -.12, .12);
     }
   }
-  function breathAt(){ return S.breath.v; }
+  function breathAt(){ return S.breath.v*opt.motion; }
 
   // ---------- 자세 ----------
   // 머리는 얼굴·이목구비·귀·귀걸이 고리·앞머리 뿌리를 한 덩어리로: 목을 축으로 살짝 기울고(roll) 옮겨진다.
@@ -247,6 +248,7 @@ window.CelesteRig = async function(cv, opt = {}){
   const api = {stage:1, expr:'', only:null, S, get STR(){ return STR; }, get ORDER(){ return ORDER; }, get size(){ return [IW, IH]; },
     draw(t, stage){ EXPR = api.expr; draw(t, stage == null ? api.stage : stage); },
     tap(){ S.react = 1; S.head.vy -= 8; },
+    set motion(v){ opt.motion = v; }, get motion(){ return opt.motion; },
     point(x, y){ S.pointer = {x, y, t:performance.now()}; },
     seed(s){ let x = s; Math.random = ()=>((x = (x*16807) % 2147483647) / 2147483647); }};
 
