@@ -211,7 +211,7 @@ const OBJS = ['angel','arch','armillary','astronaut','birdcage','book','bust','c
 const PARTS = '../parts/';
 // 원화(1228×2416)에서 무대에 보일 세로 범위: 머리 위 ~ 난간 아래
 const IW = 1228, IH = 2416, VIEW_Y0 = 330, VIEW_Y1 = 2150;
-const HALO = {x:650, y:318, rx:250};          // 원화 좌표, 머리 위에 살짝 떠 있게
+const HALO = {x:650, y:470, rx:340};          // 원화 좌표, 정수리를 감싸는 높이
 
 /* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
 function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
@@ -444,11 +444,32 @@ async function buildCollage(){
 function cloneCanvas(c){ const o = canvasOf(c.width, c.height); o.getContext('2d').drawImage(c, 0, 0); return o; }
 
 /* ═══ 헤일로: 머리 뒤(위쪽 반원)와 앞(아래쪽 반원)으로 나눠 그린다. 별이 진행도만큼 돈다 ═══ */
-// 은빛 고리 그림(힉스필드)을 뒤 반(머리 뒤)·앞 반(머리 앞)으로 나눠 머리를 감싼다.
-// halo_*.webp 1344×576 안에서 고리 중심 (671.5, 245), 가로 반지름 637.5
-function haloSvg(front){
-  const s = HALO.rx/637.5, w = 1344*s, h = 576*s;
-  return `<image href="${PARTS}halo_${front ? 'front' : 'back'}.webp" x="${HALO.x - 671.5*s}" y="${HALO.y - 245*s}" width="${w}" height="${h}"/>`;
+// 은빛 고리(힉스필드) — 뒤 반은 캐릭터 뒤, 앞 반은 캐릭터 앞으로 머리를 감싼다.
+// 고리 위로 별 장식 8개가 계속 돌고, 집중한 만큼 파란 보석 별로 바뀐다. 머리 움직임·기울기를 그대로 따라간다.
+// ring.png(1344×576) 안의 고리 중심 (671.5, 288.5), 바깥 가로 반지름 647.5 / 별이 지나는 선 632 × 148
+const RING = {cx:671.5, cy:288.5, rx:647.5, orx:632, ory:148};
+const STARS = 8, svgNS = 'http://www.w3.org/2000/svg';
+let haloStars = [];
+function buildHalo(){
+  const s = HALO.rx/RING.rx, X = v => HALO.x + (v - RING.cx)*s, Y = v => HALO.y + (v - RING.cy)*s;
+  $('haloB').innerHTML = `<g id="hb"><image href="${PARTS}halo_back.webp" x="${X(20)}" y="${Y(113)}" width="${1300*s}" height="${180*s}"/><g id="hbS"></g></g>`;
+  $('haloF').innerHTML = `<g id="hf"><image href="${PARTS}halo_front.webp" x="${X(20)}" y="${Y(284)}" width="${1300*s}" height="${183*s}"/><g id="hfS"></g></g>`;
+  haloStars = Array.from({length:STARS}, ()=>{ const im = document.createElementNS(svgNS, 'image'); im.setAttribute('href', PARTS + 'halo_star.webp'); im._blue = false; return im; });
+}
+function drawHalo(t, p, head, roll){
+  const tf = `translate(${head.x.toFixed(2)} ${head.y.toFixed(2)}) rotate(${(roll*180/Math.PI).toFixed(3)} 650 1150)`;
+  $('hb').setAttribute('transform', tf); $('hf').setAttribute('transform', tf);
+  const s = HALO.rx/RING.rx, lit = Math.floor(p*STARS + 1e-6);
+  haloStars.forEach((im, i)=>{
+    const th = t*.22 + i*Math.PI*2/STARS, sn = Math.sin(th), front = sn > 0;
+    const k = .72 + .28*(sn + 1)/2, w = 84*k, h = w*160/141;                   // 앞으로 올수록 크게
+    const x = HALO.x + Math.cos(th)*RING.orx*s, y = HALO.y + sn*RING.ory*s;
+    im.setAttribute('x', (x - w/2).toFixed(1)); im.setAttribute('y', (y - h/2).toFixed(1));
+    im.setAttribute('width', w.toFixed(1)); im.setAttribute('height', h.toFixed(1));
+    im.setAttribute('opacity', front ? 1 : .8);
+    const blue = i < lit; if(blue !== im._blue){ im._blue = blue; im.setAttribute('href', PARTS + (blue ? 'halo_star_blue.webp' : 'halo_star.webp')); }
+    const parent = $(front ? 'hfS' : 'hbS'); if(im.parentNode !== parent) parent.appendChild(im);
+  });
 }
 
 /* ═══ 기록 (기존 앱과 같은 키) ═══ */
@@ -699,7 +720,7 @@ let rig = null, shown = 0;
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
-  $('haloB').innerHTML = haloSvg(false); $('haloF').innerHTML = haloSvg(true);
+  buildHalo(); drawHalo(0, 0, {x:0, y:0}, 0);
   rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
   $('loading').remove();
   window.rig = rig;
@@ -708,10 +729,7 @@ let rig = null, shown = 0;
     const want = mode === 'finished' ? 1 : progress();
     shown += (want - shown) * .04;
     rig.draw(ms/1000, shown);
-    // 헤일로는 머리를 따라 움직인다
-    const h = rig.S.head, sc = $('figure').clientWidth / IW;
-    const tf = `translate(${h.x*sc}px, ${h.y*sc}px)`;
-    $('haloB').style.transform = tf; $('haloF').style.transform = tf;
+    drawHalo(ms/1000, progress(), rig.S.head, rig.S.roll.x);         // 헤일로는 머리를 따라 움직이고 계속 돈다
     requestAnimationFrame(loop);
   };
   if(location.hash !== '#still') requestAnimationFrame(loop);
