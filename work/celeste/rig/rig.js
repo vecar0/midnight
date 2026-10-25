@@ -258,6 +258,8 @@ window.CelesteRig = async function(cv, opt = {}){
     draw(t, stage){ EXPR = api.expr; draw(t, stage == null ? api.stage : stage); },
     tap(){ S.react = 1; S.head.vy -= 8; },
     set motion(v){ opt.motion = v; }, get motion(){ return opt.motion; },
+    resize(k){ k = clamp(k, .25, 1); const w = Math.round(IW*k), h = Math.round(IH*k);     // 화면에 보이는 크기만큼만 그려서 가볍게
+      if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; gl.viewport(0, 0, w, h); } },
     point(x, y){ S.pointer = {x, y, t:performance.now()}; },
     seed(s){ let x = s; Math.random = ()=>((x = (x*16807) % 2147483647) / 2147483647); }};
 
@@ -266,11 +268,11 @@ window.CelesteRig = async function(cv, opt = {}){
     ORDER = RIG.order.slice();
     // 얼굴 편집 패치: 눈 감음은 속눈썹 위, 미소·찡그림은 그 위 (앞머리 아래)
     const at = ORDER.indexOf('front_hair');
-    ORDER.splice(at, 0, 'face_frown', 'mouth_smile', 'eyes_closed');
+    ORDER.splice(at, 0, 'face_frown', 'mouth_smile'); ORDER.push('eyes_closed');   // 감은 눈은 맨 위: 눈 위를 지나는 머리카락에 남은 뜬 눈 흔적까지 덮는다(그 머리카락은 머리와 한 덩어리로 움직임)
     const imgs = {};
     await Promise.all(RIG.order.map(async n=>{ imgs[n] = await load(R+n+'.webp'); }).concat(
       ['face_frown','mouth_smile','eyes_closed','mask'].map(async n=>{ imgs[n] = await load(P+n+'.webp'); })));
-    cv.width = IW; cv.height = IH; gl.viewport(0,0,IW,IH);
+    api.resize(opt.scale || 1);
     const prog = program(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     U = {p:gl.getAttribLocation(prog,'p'), uv:gl.getAttribLocation(prog,'uv'), ip:gl.getAttribLocation(prog,'ip')};
     [U.p, U.uv, U.ip].forEach(a=>gl.enableVertexAttribArray(a));
