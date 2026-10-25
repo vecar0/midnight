@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#e9e8e3">
+<title>Bleu Minuit</title>
+<style>
+  :root{
+    --paper:#e9e8e3; --paper2:#f4f3ef; --ink:#121212; --grey:#8a8a86; --line:#12121233;
+    --bleu:#1E22D6;
+    --serif:"Bodoni 72","Didot","Bodoni MT","Noto Serif KR",serif;
+    --sans:-apple-system,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:14px/1.4 var(--sans);overflow:hidden;
+    -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+    padding:env(safe-area-inset-top) 0 0;
+    background:
+      radial-gradient(120% 60% at 50% 45%, #f6f5f1 0, transparent 70%),
+      repeating-linear-gradient(0deg, #0000 0 3px, #00000006 3px 4px),
+      var(--paper)}
+
+  /* ── 위: 시간 ── */
+  #top{position:relative;z-index:5;padding:14px 18px 0;display:grid;grid-template-columns:1fr auto;align-items:end;gap:4px 12px}
+  #brand{grid-column:1/3;display:flex;justify-content:space-between;align-items:baseline;
+    font:italic 13px var(--serif);letter-spacing:.06em;color:var(--grey);border-bottom:1px solid var(--line);padding-bottom:6px}
+  #brand b{font:600 12px var(--sans);letter-spacing:.32em;color:var(--ink);font-style:normal}
+  #brand b i{color:var(--bleu);font-style:normal}
+  #time{font:400 clamp(58px,19vw,92px)/.95 var(--serif);letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;margin-top:6px}
+  #time span{color:var(--bleu)}
+  #moonBox{display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:8px}
+  #moon{width:54px;height:54px}
+  #moonTxt{font:10px var(--sans);letter-spacing:.12em;color:var(--grey);white-space:nowrap}
+  #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:2px}
+  #subject{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);background:none;font:16px var(--sans);padding:6px 0;
+    color:var(--ink);border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
+  #subject::placeholder{color:var(--grey)}
+  #presets{display:flex;gap:4px}
+  #presets button{width:38px;height:32px;border:1px solid var(--ink);font:15px var(--serif);display:grid;place-items:center}
+  #presets button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+  #recent{grid-column:1/3;display:flex;gap:6px;overflow:hidden;height:22px;margin-top:4px}
+  #recent button{font-size:11px;color:var(--grey);border:1px solid var(--line);padding:2px 8px;white-space:nowrap}
+
+  /* ── 가운데: 무대 ── */
+  #stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none}
+  #collage{position:absolute;inset:0}
+  #collage .o{position:absolute;transform-origin:50% 50%;pointer-events:none}
+  #collage .o canvas{width:100%;height:auto;display:block}
+  #figure{position:absolute;left:50%;transform:translateX(-50%)}
+  #figure canvas, #figure svg{position:absolute;inset:0;width:100%;height:100%}
+  #c{z-index:2}
+  #haloB{z-index:1} #haloF{z-index:3;pointer-events:none}
+  #front{position:absolute;inset:0;z-index:4;pointer-events:none}
+  #front .o{position:absolute}
+  #front .o canvas{width:100%;height:auto;display:block}
+  #stageLbl{position:absolute;left:12px;top:8px;z-index:5;background:var(--paper2);padding:4px 8px 3px;box-shadow:1px 1px 0 #0001;font:italic 12px var(--serif);color:var(--grey);letter-spacing:.08em}
+  #stageLbl b{display:block;font:600 10px var(--sans);letter-spacing:.3em;color:var(--ink);font-style:normal}
+  #doves{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+  #doves img{position:absolute;width:22%;opacity:0;filter:grayscale(1) contrast(1.1)}
+  @keyframes fly{0%{opacity:0;transform:translate(0,0) rotate(var(--r)) scale(.6)}
+    12%{opacity:1}
+    100%{opacity:0;transform:translate(var(--dx),-120vh) rotate(calc(var(--r)*-1)) scale(1)}}
+
+  /* ── 아래: 버튼·기록 (찢긴 종이) ── */
+  #bottom{position:relative;z-index:7;margin-top:-34px;padding:30px 18px calc(14px + env(safe-area-inset-bottom));
+    background:var(--paper2);
+    clip-path:polygon(0 14px,6% 6px,13% 16px,21% 4px,30% 12px,38% 2px,47% 13px,55% 5px,63% 15px,71% 3px,80% 11px,88% 2px,95% 12px,100% 5px,100% 100%,0 100%);
+    filter:drop-shadow(0 -1px 0 #0002)}
+  #status{font:italic 13px var(--serif);color:var(--grey);text-align:center;min-height:18px;margin-bottom:10px}
+  #btns{display:flex;gap:10px}
+  #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em}
+  #go.run{background:var(--ink)}
+  #quit{width:88px;height:52px;border:1px solid var(--ink);font-size:13px;letter-spacing:.1em}
+  #quit[hidden]{display:none}
+  #stats{display:flex;justify-content:space-between;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  #stats div{text-align:center;flex:1}
+  #stats b{display:block;font:400 20px var(--serif)}
+  #stats span{font-size:10px;color:var(--grey);letter-spacing:.14em}
+  #toast{position:fixed;left:50%;top:64%;transform:translate(-50%,-50%);z-index:20;background:var(--ink);color:var(--paper);
+    padding:10px 18px;font:italic 15px var(--serif);opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+  #toast.on{opacity:1}
+  /* 가로: 왼쪽 시간·버튼, 오른쪽 무대 */
+  @media (orientation:landscape) and (max-height:600px){
+    #app{display:grid;grid-template-columns:minmax(300px,42%) 1fr;grid-template-rows:auto 1fr;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+    #top{grid-column:1;grid-row:1;padding-top:10px}
+    #time{font-size:64px}
+    #stage{grid-column:2;grid-row:1/3}
+    #bottom{grid-column:1;grid-row:2;margin:0;clip-path:none;filter:none;background:none;padding-top:8px;align-self:end}
+    #recent{display:none}
+  }
+  #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
+</style></head><body>
+<div id="app">
+  <header id="top">
+    <div id="brand"><span id="date"></span><b>BLEU <i>MINUIT</i></b></div>
+    <div id="time">25<span>:</span>00</div>
+    <div id="moonBox"><svg id="moon" viewBox="-50 -50 100 100"></svg><div id="moonTxt"></div></div>
+    <div id="row">
+      <input id="subject" placeholder="무엇에 집중할까요" maxlength="20" enterkeyhint="done" autocomplete="off">
+      <div id="presets"></div>
+    </div>
+    <div id="recent"></div>
+  </header>
+
+  <main id="stage">
+    <div id="loading">석고상을 깨우는 중…</div>
+    <div id="collage"></div>
+    <div id="figure">
+      <svg id="haloB"></svg>
+      <canvas id="c"></canvas>
+      <svg id="haloF"></svg>
+    </div>
+    <div id="front"></div>
+    <div id="stageLbl"><b>CÉLESTE</b><span id="stageName">plâtre · 석고</span></div>
+    <div id="doves"></div>
+  </main>
+
+  <footer id="bottom">
+    <div id="status">시간을 고르고 시작하세요</div>
+    <div id="btns"><button id="go">집중 시작</button><button id="quit" hidden>그만두기</button></div>
+    <div id="stats">
+      <div><b id="sTime">0분</b><span>오늘</span></div>
+      <div><b id="sCnt">0</b><span>완주</span></div>
+      <div><b id="sBest">0분</b><span>최장</span></div>
+    </div>
+  </footer>
+</div>
+<div id="toast"></div>
+
+<script src="../rig/rig.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const OBJS = ['angel','arch','armillary','astronaut','birdcage','book','bust','candelabra','cherub','chess','column','crescent','crown',
+  'dove','earth','gargoyle','hands','hourglass','iris','keyhand','lily','mask','mirror','moon','perfume','roses','saturn','telescope','watch','wing'];
+const PARTS = '../parts/';
+// 원화(1228×2416)에서 무대에 보일 세로 범위: 머리 위 ~ 난간 아래
+const IW = 1228, IH = 2416, VIEW_Y0 = 330, VIEW_Y1 = 2150;
+const HALO = {x:650, y:455, rx:250, ry:58};          // 원화 좌표, 머리 위 헤일로
+
+/* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
+function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return ()=>{ h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1e6) / 1e6; }; }
+const dayKey = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
+
+/* ═══ 진짜 달의 위상 ═══ */
+function moonAge(d = new Date()){ const syn = 29.530588853, ref = Date.UTC(2000,0,6,18,14);
+  return (((d - ref)/864e5) % syn + syn) % syn; }
+const MOON_NAMES = ['삭','초승','상현','차오름','보름','기울어감','하현','그믐'];
+function moonName(age){ return MOON_NAMES[Math.floor(((age/29.530588853)*8 + .5)) % 8]; }
+// 오른쪽부터 차오르는 달: lit 0(새 달) → 1(보름)
+function moonPath(lit, r = 40){
+  const rx = Math.abs(1 - 2*lit)*r, sweep = lit < .5 ? 0 : 1;      // 반달 전엔 그림자 경계가 오른쪽으로, 지나면 왼쪽으로 부푼다
+  return `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx} ${r} 0 0 ${sweep} 0 ${-r}Z`;
+}
+function paintMoon(p){
+  // 진행도 0 → 새 달, 1 → 보름달
+  $('moon').innerHTML = `<circle r="40" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="2 3"/>
+    <path d="${moonPath(p)}" fill="${p >= 1 ? '#1E22D6' : '#121212'}"/>
+    <circle r="46" fill="none" stroke="#12121222"/>`;
+}
+
+/* ═══ 오늘의 콜라주: 오브젝트 30 × 처리 6 × 구도 4 ═══ */
+const TREAT = ['plain','bleu','ghost','halftone','cutout','negative'];
+const TREAT_KO = {plain:'흑백',bleu:'블루',ghost:'잔상',halftone:'망점',cutout:'오려붙임',negative:'반전'};
+// 구도: [x%, y%, 높이%, 회전°, 앞뒤] — 무대 상자 기준, 캐릭터는 가운데
+const COMPOSE = [
+  [[ -4, 6,38,-8,'b'],[72, 2,34, 9,'b'],[78,46,30,-6,'b'],[-8,50,28, 7,'b'],[70,74,20,12,'f']],
+  [[ 62,-2,44, 6,'b'],[-6,18,36,-5,'b'],[-2,62,24,10,'b'],[80,40,26,-9,'b'],[ 2,76,18,-14,'f']],
+  [[ 30,-6,30, 0,'b'],[-10,30,46,4,'b'],[74,22,40,-4,'b'],[82,66,22,8,'b'],[-4,78,17,10,'f']],
+  [[ -6,-4,30,10,'b'],[74,-2,30,-10,'b'],[-8,40,32,-4,'b'],[76,44,34,5,'b'],[76,78,18,-8,'f']],
+];
+function loadImg(src){ return new Promise((ok, no)=>{ const i = new Image(); i.onload = ()=>ok(i); i.onerror = no; i.src = src; }); }
+function treat(img, kind, rnd){
+  const s = Math.min(1, 420 / Math.max(img.width, img.height));
+  const w = Math.round(img.width*s), h = Math.round(img.height*s);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h), px = d.data;
+  for(let i = 0; i < px.length; i += 4){
+    let L = (px[i]*.3 + px[i+1]*.59 + px[i+2]*.11) / 255;
+    L = clamp((L - .5)*1.15 + .5, 0, 1);
+    let r, gg, b, a = px[i+3];
+    if(kind === 'bleu'){ r = 30 + (255-30)*L; gg = 34 + (255-34)*L; b = 214 + (255-214)*L; }      // 클랭 블루 ↔ 흰색
+    else if(kind === 'negative'){ const v = 255*(1-L); r = gg = b = v; }
+    else if(kind === 'ghost'){ const v = 120 + 120*L; r = gg = b = v; a *= .45; }
+    else { const v = 255*L; r = gg = b = v; }
+    if(kind === 'halftone'){                                          // 망점: 5px 격자 점
+      const x = (i/4) % w, y = Math.floor(i/4/w), cx = (x % 5) - 2, cy = (y % 5) - 2;
+      const on = Math.hypot(cx, cy) < (1-L)*3.4;
+      r = gg = b = on ? 18 : 236; if(!on) a *= .5;
+    }
+    px[i] = r; px[i+1] = gg; px[i+2] = b; px[i+3] = a;
+  }
+  g.putImageData(d, 0, 0);
+  if(kind === 'cutout'){                                              // 흰 테두리 + 그림자: 오려 붙인 종이
+    const o = document.createElement('canvas'); o.width = w+16; o.height = h+16;
+    const q = o.getContext('2d');
+    q.shadowColor = '#0004'; q.shadowBlur = 6; q.shadowOffsetX = 2; q.shadowOffsetY = 3;
+    for(let k = 0; k < 12; k++){ const t = k/12*Math.PI*2; q.drawImage(c, 8 + Math.cos(t)*5, 8 + Math.sin(t)*5); }
+    q.shadowColor = 'transparent'; q.globalCompositeOperation = 'source-in'; q.fillStyle = '#fbfaf6'; q.fillRect(0, 0, o.width, o.height);
+    q.globalCompositeOperation = 'source-over'; q.drawImage(c, 8, 8);
+    return o;
+  }
+  return c;
+}
+async function buildCollage(){
+  const rnd = rngOf('bleu-minuit/' + dayKey());
+  const pool = OBJS.slice(); const pick = [];
+  for(let i = 0; i < 5; i++) pick.push(pool.splice(Math.floor(rnd()*pool.length), 1)[0]);
+  const comp = COMPOSE[Math.floor(rnd()*COMPOSE.length)];
+  const kinds = pick.map(()=>TREAT[Math.floor(rnd()*TREAT.length)]);
+  kinds[Math.floor(rnd()*5)] = 'bleu';                                 // 파란색은 하루 한 점만 꼭
+  const els = await Promise.all(pick.map(async (n, i)=>{
+    const img = await loadImg(PARTS + 'obj_' + n + '.webp');
+    const [x, y, hh, rot, side] = comp[i];
+    const el = document.createElement('div'); el.className = 'o';
+    el.dataset.h = hh; el.dataset.ar = img.width / img.height;
+    el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = `rotate(${rot + (rnd()-.5)*6}deg)`;
+    el.appendChild(treat(img, kinds[i], rnd));
+    (side === 'f' ? $('front') : $('collage')).appendChild(el);
+    return el;
+  }));
+  window.TODAY = pick.map((n, i)=>n + '·' + TREAT_KO[kinds[i]]);
+  sizeCollage();
+}
+function sizeCollage(){
+  const H = $('stage').clientHeight;
+  document.querySelectorAll('#collage .o, #front .o').forEach(el=>{ el.style.width = (H * el.dataset.h/100 * el.dataset.ar) + 'px'; });
+}
+
+/* ═══ 헤일로: 머리 뒤(위쪽 반원)와 앞(아래쪽 반원)으로 나눠 그린다. 별이 진행도만큼 돈다 ═══ */
+function haloSvg(front, p){
+  const {x, y, rx, ry} = HALO;
+  const arc = front ? `M${x-rx} ${y} A${rx} ${ry} 0 0 0 ${x+rx} ${y}` : `M${x-rx} ${y} A${rx} ${ry} 0 0 1 ${x+rx} ${y}`;
+  // 별: 왼쪽 끝에서 시작해 뒤(위)를 지나 앞(아래)으로 한 바퀴
+  const a = Math.PI + p*Math.PI*2, sx = x + Math.cos(a)*rx, sy = y + Math.sin(a)*ry;
+  const isFront = Math.sin(a) > 0;
+  const star = (isFront === front) ? `<path transform="translate(${sx} ${sy}) scale(${p >= 1 ? 1.5 : 1})" d="M0 -22L5 -5 22 0 5 5 0 22 -5 5 -22 0 -5 -5Z" fill="#1E22D6"/>` : '';
+  const trail = p > 0 ? '' : '';
+  return `<path d="${arc}" fill="none" stroke="#121212" stroke-width="2.2" stroke-dasharray="${front ? '0' : '6 7'}" opacity="${front ? .8 : .45}"/>${trail}${star}`;
+}
+
+/* ═══ 기록 (기존 앱과 같은 키) ═══ */
+const today = () => new Date().toDateString();
+let rec = {day:today(), todaySec:0, done:0, best:0, sessions:[]};
+try{ const s = JSON.parse(localStorage.getItem('midnight.rec') || 'null'); if(s) rec = Object.assign(rec, s); }catch(e){}
+if(!Array.isArray(rec.sessions)) rec.sessions = [];
+if(rec.day !== today()){ rec.day = today(); rec.todaySec = 0; }
+function saveRec(){ try{ localStorage.setItem('midnight.rec', JSON.stringify(rec)); }catch(e){} }
+let cur = null;
+const subjOf = () => ($('subject').value.trim() || '자유 집중');
+function commit(done){ if(!cur) return;
+  if(done || cur.sec >= 60){ rec.sessions.unshift({s:cur.s, t:cur.t, sec:cur.sec, mins:cur.mins, done:!!done}); rec.sessions = rec.sessions.slice(0, 200); }
+  cur = null; saveRec(); paintStats(); }
+const esc = t => t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtMin = sec => { const m = Math.round(sec/60); return m >= 60 ? Math.floor(m/60)+'시간 '+(m%60)+'분' : m+'분'; };
+function paintStats(){
+  $('sTime').textContent = fmtMin(rec.todaySec); $('sCnt').textContent = rec.done; $('sBest').textContent = rec.best + '분';
+  const recent = [...new Set(rec.sessions.map(x=>x.s))].filter(x=>x !== '자유 집중').slice(0, 4);
+  $('recent').innerHTML = recent.map(x=>'<button type="button">'+esc(x)+'</button>').join('');
+}
+
+/* ═══ 소리: 완주 화음, 포기 종 (작게) ═══ */
+let AC = null;
+function tone(freqs, dur, type = 'sine', vol = .12){
+  try{ AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if(AC.state === 'suspended') AC.resume();
+    const t = AC.currentTime;
+    freqs.forEach((f, k)=>{ const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t + k*.12); g.gain.linearRampToValueAtTime(vol, t + k*.12 + .02); g.gain.exponentialRampToValueAtTime(.0001, t + k*.12 + dur);
+      o.connect(g); g.connect(AC.destination); o.start(t + k*.12); o.stop(t + k*.12 + dur + .05); });
+  }catch(e){}
+}
+
+/* ═══ 타이머 ═══ */
+let mins = 25, total = 1500, remain = 1500, endAt = 0, mode = 'idle', tid = null, wake = null;
+const STAGES = [[0,'plâtre · 석고'],[.25,'craquelure · 금'],[.5,'aube · 새벽빛'],[.75,'bleu · 푸름'],[1,'minuit · 자정']];
+function progress(){ return mode === 'idle' ? 0 : total ? (total - remain)/total : 0; }
+function paint(){
+  const m = Math.floor(remain/60), s = remain % 60;
+  $('time').innerHTML = String(m).padStart(2,'0') + '<span>:</span>' + String(s).padStart(2,'0');
+  const p = mode === 'finished' ? 1 : progress();
+  paintMoon(p);
+  $('haloB').innerHTML = haloSvg(false, p); $('haloF').innerHTML = haloSvg(true, p);
+  $('stageName').textContent = STAGES.filter(x=>p >= x[0]).pop()[1];
+  $('quit').hidden = !(mode === 'run' || mode === 'paused');
+}
+async function keepAwake(on){ try{ if(on && 'wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); else if(wake){ await wake.release(); wake = null; } }catch(e){} }
+function setStatus(t){ $('status').textContent = t; }
+function toast(t, ms = 2400){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('on'), ms); }
+function setMins(v){ mins = v; total = v*60; remain = total;
+  document.querySelectorAll('#presets button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.m === v))); paint(); }
+function tickOnce(){
+  const was = remain; remain = Math.max(0, Math.round((endAt - Date.now())/1000));
+  const add = Math.max(0, was - remain); rec.todaySec += add; if(cur) cur.sec += add;
+  if(rec.todaySec % 15 < add) saveRec();
+  paint(); paintStats(); if(remain <= 0) finish();
+}
+function start(){
+  if(mode === 'run'){ pause(); return; }
+  if(mode !== 'paused') remain = total;
+  if(!cur) cur = {s:subjOf(), t:Date.now(), sec:0, mins};
+  if(rig) rig.expr = '';
+  mode = 'run'; endAt = Date.now() + remain*1000; $('subject').disabled = true;
+  $('go').textContent = '잠시 멈춤'; $('go').classList.add('run'); setStatus(cur.s + ' · ' + mins + '분');
+  keepAwake(true); clearInterval(tid); tid = setInterval(tickOnce, 1000); paint();
+}
+function pause(){ mode = 'paused'; clearInterval(tid); keepAwake(false); saveRec();
+  $('go').textContent = '이어서 집중'; $('go').classList.remove('run'); setStatus('석고가 숨을 고르는 중'); paint(); }
+function finish(){ clearInterval(tid); keepAwake(false);
+  remain = 0; mode = 'finished'; rec.done++; rec.best = Math.max(rec.best, mins); commit(true); $('subject').disabled = false;
+  tone([523.25, 659.25, 783.99, 1046.5], 1.4);
+  if(rig){ rig.expr = 'smile'; }
+  doves();
+  setStatus(mins + '분 완주 · 셀레스트가 색을 되찾았어요');
+  $('go').textContent = '다시 시작'; $('go').classList.remove('run'); toast('Bleu Minuit', 3000); paint(); paintStats(); }
+function giveUp(){ const spent = Math.floor((total - remain)/60);
+  clearInterval(tid); keepAwake(false); saveRec(); commit(false); $('subject').disabled = false; mode = 'idle'; remain = total;
+  $('go').textContent = '집중 시작'; $('go').classList.remove('run');
+  if(rig){ rig.expr = 'frown'; setTimeout(()=>{ if(mode === 'idle' && rig.expr === 'frown') rig.expr = ''; }, 4500); }
+  tone([392, 277.18], 1.6, 'triangle', .08);
+  setStatus(spent >= 1 ? spent + '분은 기록에 남았어요' : '시간을 고르고 시작하세요'); paint(); }
+function doves(){
+  const box = $('doves'); box.innerHTML = '';
+  for(let i = 0; i < 7; i++){ const im = new Image(); im.src = PARTS + 'obj_dove.webp';
+    im.style.left = (10 + Math.random()*70) + '%'; im.style.top = (55 + Math.random()*35) + '%';
+    im.style.setProperty('--dx', ((Math.random()-.5)*60) + 'vw'); im.style.setProperty('--r', ((Math.random()-.5)*30) + 'deg');
+    im.style.animation = `fly ${2.6 + Math.random()*1.4}s ${i*.18}s cubic-bezier(.3,.1,.4,1) forwards`;
+    box.appendChild(im); }
+}
+
+/* ═══ UI ═══ */
+$('presets').innerHTML = [10,25,40,60].map(v=>'<button data-m="'+v+'" aria-pressed="'+(v === 25)+'">'+v+'</button>').join('');
+$('presets').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
+  if(mode === 'run'){ toast('집중 중엔 바꿀 수 없어요', 1700); return; }
+  if(mode === 'paused'){ commit(false); }
+  if(mode !== 'idle'){ mode = 'idle'; $('go').textContent = '집중 시작'; setStatus('시간을 고르고 시작하세요'); if(rig) rig.expr = ''; }
+  setMins(+b.dataset.m); };
+$('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b || mode === 'run') return; $('subject').value = b.textContent; };
+$('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
+$('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
+try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}
+$('subject').addEventListener('change', ()=>{ try{ localStorage.setItem('midnight.subj', $('subject').value.trim()); }catch(e){} });
+$('go').onclick = ()=>{ if(mode === 'finished'){ mode = 'idle'; } start(); };
+$('quit').onclick = giveUp;
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode === 'run') tickOnce(); });
+
+{ const d = new Date(), age = moonAge(d);
+  $('date').textContent = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  $('moonTxt').textContent = '오늘 달 · ' + moonName(age); }
+
+/* ═══ 무대 맞추기 ═══ */
+// 아이폰 홈 화면 앱은 innerHeight를 짧게 주는 경우가 있어 화면 높이를 쓴다
+function appH(){ const sa = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  return sa && Math.abs(screen.width - innerWidth) < 2 ? screen.height : innerHeight; }
+function fit(){
+  $('app').style.height = appH() + 'px';
+  const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
+  const H = st.clientHeight + (land ? 0 : 34);      // 세로에선 아래 종이 밑으로 조금 들어간다
+  const sc = H / (VIEW_Y1 - VIEW_Y0);
+  const fw = IW*sc, fh = IH*sc;
+  Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:(-VIEW_Y0*sc) + 'px'});
+  sizeCollage();
+}
+addEventListener('resize', fit);
+
+/* ═══ 시작 ═══ */
+let rig = null, shown = 0;
+(async ()=>{
+  fit(); paint(); paintStats();
+  ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
+  buildCollage().catch(e=>console.warn('collage', e));
+  rig = await CelesteRig($('c'), {base:'../rig/', parts:PARTS, input:$('stage'), capture:location.hash === '#shot'});
+  $('loading').remove();
+  window.rig = rig;
+  const loop = ms=>{
+    // 색은 진행도를 천천히 따라간다 (끝나면 완전히, 대기 중엔 석고)
+    const want = mode === 'finished' ? 1 : progress();
+    shown += (want - shown) * .04;
+    rig.draw(ms/1000, shown);
+    // 헤일로는 머리를 따라 움직인다
+    const h = rig.S.head, sc = $('figure').clientWidth / IW;
+    const tf = `translate(${h.x*sc}px, ${h.y*sc}px)`;
+    $('haloB').style.transform = tf; $('haloF').style.transform = tf;
+    requestAnimationFrame(loop);
+  };
+  if(location.hash !== '#still') requestAnimationFrame(loop);
+  window.ready = true;
+})();
+</script>
+</body></html>
