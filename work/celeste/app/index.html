@@ -36,7 +36,7 @@
   #time span{color:var(--bleu)}
   #moonBox{position:relative;z-index:-1;display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:4px}
   #moon{width:124px;height:124px;display:block;margin:-26px -16px -22px -10px}
-  #moonTxt{font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em;color:var(--ink);white-space:nowrap;background:#fff;padding:1px 5px;outline:1px solid var(--ink)}
+  #moonTxt{position:relative;z-index:2;font:10px 'American Typewriter','Courier New',monospace;letter-spacing:.06em;color:var(--ink);white-space:nowrap;background:#fff;padding:1px 5px;outline:1px solid var(--ink)}
   #row{grid-column:1/3;display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--paper2);padding:4px 6px 4px 10px;outline:1px solid var(--ink)}
   #subject{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);background:none;font:16px var(--sans);padding:6px 0;
     color:var(--ink);border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
@@ -423,9 +423,9 @@ async function buildCollage(){
   // 8) 타자기 글귀 상자 + 곡선 글귀
   Object.assign($('stageLbl').style, side === 'L' ? {left:'auto', right:'12px'} : {left:'12px', right:'auto'});   // 이름표는 글귀 반대쪽
   const topB = land ? 0 : $('top').getBoundingClientRect().bottom - ab.top;      // 위쪽 글자판 아래부터
-  { const L = pick(LINES), w = Math.min(170, W*.4), x = side === 'L' ? 4 : W - w - 4, y = Math.max(H*rr(.31, .34), topB + 14), lh = 12;
+  { const L = pick(LINES), w = land ? Math.min(170, W*.4) : Math.min(140, W*.34), x = side === 'L' ? 4 : W - w - 4, y = Math.max(H*rr(.31, .34), topB + 14), lh = land ? 12 : 10.5;
     f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
-    f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="9.5" fill="${K}">` +
+    f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="${land ? 9.5 : 8.2}" fill="${K}">` +
       L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
   { const r = W*rr(.32, .42), cx = sx(W*rr(.7, .9)), cy = H*rr(.72, .86);
     b2 += `<path id="arc" d="M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}" fill="none" stroke="${B}" stroke-width=".6" stroke-dasharray="1 3"/>
@@ -736,7 +736,7 @@ function fit(){
   const st = $('stage'), land = matchMedia('(orientation:landscape) and (max-height:600px)').matches;
   // 난간 윗선(원화 y 2018)을 아래 띠(세로: 패널 위 마름모 띠 / 가로: 무대 아래 띠)에 딱 맞춘다 → 팔짱 낀 팔이 띠 위에 얹힌 모양
   const H = (land ? st.clientHeight - 20 : $('bottom').getBoundingClientRect().top - st.getBoundingClientRect().top) + 2, BOT = 2018;   // 띠 윗선까지
-  const sc = Math.min(H / (BOT - VIEW_Y0 + (land ? 34 : 6)), st.clientWidth*(land ? .98 : 1.02) / 980);   // 980 = 팔 폭, 40 = 헤일로 여유
+  const sc = Math.min(H / (BOT - 245), st.clientWidth*(land ? .98 : 1.02) / 980);   // 980 = 팔 폭, 40 = 헤일로 여유
   const fw = IW*sc, fh = IH*sc, top = H - BOT*sc;
   Object.assign($('figure').style, {width:fw + 'px', height:fh + 'px', top:top + 'px'});
   FIG = {x:st.offsetLeft + (st.clientWidth - fw)/2, y:st.offsetTop + top, sc};
