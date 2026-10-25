@@ -110,11 +110,11 @@
   #cal .cw,#calGrid{display:grid;grid-template-columns:repeat(7,1fr)}
   #cal .cw span{font:10px var(--sans);color:var(--grey);text-align:center;padding:4px 0;letter-spacing:.1em}
   #calGrid{gap:3px;background:radial-gradient(circle,#1E22D630 1.1px,transparent 1.4px) 0 0/7px 7px;padding:3px;outline:1px solid var(--ink)}
-  #calGrid .d{position:relative;aspect-ratio:1/1.15;background:#fff;overflow:visible;font:10px 'American Typewriter','Courier New',monospace}
+  #calGrid .d{position:relative;aspect-ratio:1/1.15;background:#fff;overflow:hidden;font:10px 'American Typewriter','Courier New',monospace}
   #calGrid .d.out{visibility:hidden}
   #calGrid .d i{position:absolute;left:2px;top:2px;font-style:normal;z-index:5;background:#fff;padding:0 2px;line-height:1.3}
   #calGrid .d .m{position:absolute;right:3px;bottom:3px;width:13px;height:13px;opacity:.8}
-  #calGrid .d .st{position:absolute;inset:4% 0 -2%;display:grid;place-items:center;z-index:1;pointer-events:none}
+  #calGrid .d .st{position:absolute;inset:20% 10% 8%;display:grid;place-items:center;z-index:1;pointer-events:none}
   #calGrid .d .st canvas{max-width:100%;max-height:100%}
   #calGrid .d.has::before{content:"";position:absolute;left:3px;right:3px;bottom:3px;height:3px;background:var(--bleu);opacity:.35}
   #calGrid .d.today{outline:2px solid var(--ink);outline-offset:-2px}
@@ -122,21 +122,23 @@
   #plan{margin-top:12px;background:#fff;outline:1px solid var(--ink);padding:10px 12px;box-shadow:5px 5px 0 var(--bleu)}
   #plan .ph{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:6px;margin-bottom:6px}
   #plan .ph b{font:400 17px var(--serif)} #planState{font:11px 'American Typewriter','Courier New',monospace;color:var(--bleu)}
-  #planList .it{display:grid;grid-template-columns:1fr auto 26px;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #0002}
-  #planList .it span{font-size:14px} #planList .it em{font:12px 'American Typewriter','Courier New',monospace;font-style:normal;color:#555}
-  #planList .it.ok em{color:var(--bleu)} #planList .it.ok span::after{content:" ✦";color:var(--bleu)}
-  #planList .it u{grid-column:1/3;height:3px;background:#0001;position:relative;text-decoration:none}
-  #planList .it u::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--bleu)}
-  #planList .it button{grid-row:1/3;grid-column:3;font-size:16px;color:var(--grey)}
+  #planList .it{display:grid;grid-template-columns:26px 1fr 26px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed #0002}
+  #planList .it .ck{width:20px;height:20px;border:1.5px solid var(--ink);background:#fff;display:grid;place-items:center;font-size:13px;color:#fff}
+  #planList .it.ok .ck{background:var(--bleu);border-color:var(--bleu)}
+  #planList .it.ok .ck::after{content:"✓"}
+  #planList .it span{font-size:14px;word-break:keep-all}
+  #planList .it.ok span{color:#888;text-decoration:line-through;text-decoration-color:var(--bleu)}
+  #planList .it .x{font-size:16px;color:var(--grey)}
+  #plan.future .ck{opacity:.35;pointer-events:none}
   #planList .none{font:12px 'American Typewriter','Courier New',monospace;color:var(--grey);padding:6px 0}
   #planAdd{display:flex;gap:6px;align-items:center;margin-top:8px}
   #planAdd input{flex:1;min-width:0;border:0;border-bottom:1px solid var(--ink);font:16px var(--sans);padding:5px 0;background:none;border-radius:0;outline:none;-webkit-user-select:text;user-select:text}
   #planAdd select{font:15px var(--serif);border:1px solid var(--ink);background:#fff;padding:3px 4px;border-radius:0;color:var(--ink)}
   #planAdd span{font-size:12px;color:#555}
   #planAdd button{background:var(--ink);color:#fff;padding:7px 12px;font-size:13px}
-  #plan.past #planAdd,#plan.past .it button{display:none}
+  #plan.past #planAdd,#plan.past .it .x{display:none}
   #calClose{display:block;width:100%;margin-top:16px;height:46px;border:1px solid var(--ink);background:#fff;letter-spacing:.2em}
-  #recent button.ok{color:var(--bleu);border-color:var(--bleu)}
+  #recent button.ok{color:#888;border-color:var(--bleu);text-decoration:line-through;text-decoration-color:var(--bleu)}
   #recent button.add{border-style:dashed}
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
 </style></head><body>
@@ -178,15 +180,14 @@
 <div id="toast"></div>
 <section id="cal" hidden>
   <div class="ch"><button id="calPrev" type="button">‹</button><div><small>CALENDRIER</small><b id="calTitle"></b></div><button id="calNext" type="button">›</button></div>
-  <div id="calNote">계획을 다 채운 날엔 콜라주 조각이 붙어요</div>
+  <div id="calNote"></div>
   <div class="cw"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
   <div id="calGrid"></div>
   <div id="plan">
     <div class="ph"><b id="planTitle"></b><span id="planState"></span></div>
     <div id="planList"></div>
     <form id="planAdd" autocomplete="off">
-      <input id="planSubj" placeholder="과목" maxlength="20" enterkeyhint="done">
-      <select id="planMin"><option>25</option><option selected>50</option><option>75</option><option>100</option><option>150</option></select><span>분</span>
+      <input id="planSubj" placeholder="할 일 (예: 수학 문제집 3장)" maxlength="30" enterkeyhint="done">
       <button type="submit">추가</button>
     </form>
   </div>
@@ -457,50 +458,53 @@ let cur = null;
 const subjOf = () => ($('subject').value.trim() || '자유 집중');
 function commit(done){ if(!cur) return;
   if(done || cur.sec >= 60){ rec.sessions.unshift({s:cur.s, t:cur.t, sec:cur.sec, mins:cur.mins, done:!!done}); rec.sessions = rec.sessions.slice(0, 200); }
-  cur = null; saveRec(); paintStats(); checkStamp(keyOf()); }
+  cur = null; saveRec(); paintStats(); }
 const esc = t => t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtMin = sec => { const m = Math.round(sec/60); return m >= 60 ? Math.floor(m/60)+'시간 '+(m%60)+'분' : m+'분'; };
 function paintStats(){
   $('sTime').textContent = fmtMin(rec.todaySec); $('sCnt').textContent = rec.done; $('sBest').textContent = rec.best + '분';
   const plan = plans[keyOf()] || [];
   if(plan.length){
-    const by = focusedOn(keyOf());
-    $('recent').innerHTML = plan.map(it=>{ const got = Math.floor((by[it.s] || 0)/60), ok = got >= it.m;
-      return '<button type="button" data-s="'+esc(it.s)+'" class="'+(ok ? 'ok' : '')+'">'+esc(it.s)+' '+Math.min(got, it.m)+'/'+it.m+'분'+(ok ? ' ✦' : '')+'</button>'; }).join('');
+    $('recent').innerHTML = plan.map((it, i)=>'<button type="button" data-i="'+i+'" class="'+(it.d ? 'ok' : '')+'">'+(it.d ? '☑ ' : '☐ ')+esc(it.t)+'</button>').join('');
   } else {
     const recent = [...new Set(rec.sessions.map(x=>x.s))].filter(x=>x !== '자유 집중').slice(0, 3);
-    $('recent').innerHTML = '<button type="button" class="add" data-cal="1">+ 오늘 계획</button>' + recent.map(x=>'<button type="button" data-s="'+esc(x)+'">'+esc(x)+'</button>').join('');
+    $('recent').innerHTML = '<button type="button" class="add" data-cal="1">+ 오늘 할 일</button>' + recent.map(x=>'<button type="button" data-s="'+esc(x)+'">'+esc(x)+'</button>').join('');
   }
 }
 
-/* ═══ 달력 + 공부 계획 ═══
-   bleu.plan = {'2026-10-25':[{s:'수학', m:50}, ...]}  · 그날 그 과목을 m분 이상 집중하면 그 항목 달성
-   계획을 다 채우면 bleu.cal 에 그날의 콜라주 조각(오브젝트·처리·각도)을 붙인다. 한 번 붙은 조각은 그대로 */
+/* ═══ 달력 + 공부 계획(체크리스트) ═══
+   bleu.plan = {'2026-10-25':[{t:'수학 문제집 3장', d:false}, ...]}
+   그날 할 일을 다 체크하면 bleu.cal 에 그날의 콜라주 조각(오브젝트·처리·각도)을 붙인다. 날짜로 정해져 다시 채워도 같은 조각 */
 const keyOf = (d = new Date()) => d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
 const dateOf = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
 let plans = {}, stamps = {};
 try{ plans = JSON.parse(localStorage.getItem('bleu.plan') || '{}') || {}; }catch(e){}
 try{ stamps = JSON.parse(localStorage.getItem('bleu.cal') || '{}') || {}; }catch(e){}
+for(const k in plans) plans[k] = plans[k].map(it=>it.t != null ? it : {t:it.s, d:false});     // 예전(과목·분) 형식 정리
 const savePlans = () => { try{ localStorage.setItem('bleu.plan', JSON.stringify(plans)); }catch(e){} };
 const saveStamps = () => { try{ localStorage.setItem('bleu.cal', JSON.stringify(stamps)); }catch(e){} };
-function focusedOn(k){                                         // 그날 과목별 집중 초
-  const t0 = +dateOf(k), t1 = t0 + 864e5, by = {};
-  rec.sessions.filter(x=>x.t >= t0 && x.t < t1).forEach(x=>{ by[x.s] = (by[x.s] || 0) + x.sec; });
-  if(cur && k === keyOf()) by[cur.s] = (by[cur.s] || 0) + cur.sec;
-  return by;
-}
-const dayDone = k => { const p = plans[k]; if(!p || !p.length) return false; const by = focusedOn(k); return p.every(it=>(by[it.s] || 0) >= it.m*60); };
+const isFuture = k => +dateOf(k) > +dateOf(keyOf());
+const dayDone = k => { const p = plans[k]; return !!(p && p.length && p.every(it=>it.d)); };
 function checkStamp(k){
-  if(stamps[k] || !dayDone(k)) return;
+  if(isFuture(k)) return;
+  if(!dayDone(k)){ if(stamps[k]){ delete stamps[k]; saveStamps(); } return; }     // 체크를 풀면 조각도 떼어진다
+  if(stamps[k]) return;
+  makeStamp(k); saveStamps(); tone([659.25, 783.99, 1046.5, 1318.5], 1.2, 'sine', .09);
+  toast('오늘의 콜라주 한 조각 ✦', 3000);
+}
+function makeStamp(k){
   const r = rngOf('cal/' + k), pool = OBJS.filter(n=>n !== 'dove');
-  stamps[k] = {n:pool[Math.floor(r()*pool.length)], k:['plain','bleu','gradient','halftone','negative','bleu'][Math.floor(r()*6)], r:Math.round((r() - .5)*24)};
-  saveStamps(); tone([659.25, 783.99, 1046.5, 1318.5], 1.2, 'sine', .09);
-  toast('오늘의 콜라주 한 조각 ✦', 3000); paintStats(); if(!$('cal').hidden) paintCal();
+  stamps[k] = {n:pool[Math.floor(r()*pool.length)], k:['plain','bleu','gradient','halftone','negative','bleu'][Math.floor(r()*6)], r:Math.round((r() - .5)*14)};
+}
+for(const k in plans) if(!isFuture(k) && dayDone(k) && !stamps[k]) makeStamp(k);        // 빠진 조각 채우기(조용히)
+function toggleItem(k, i){
+  if(isFuture(k) || !plans[k] || !plans[k][i]) return;
+  plans[k][i].d = !plans[k][i].d; savePlans(); checkStamp(k); paintStats(); paintCal();
 }
 let calMonth = new Date(), calSel = keyOf();
 calMonth.setDate(1);
 function openCal(k = keyOf()){ calSel = k; calMonth = dateOf(k); calMonth.setDate(1); $('cal').hidden = false;
-  Object.keys(plans).forEach(checkStamp); paintCal(); }
+  paintCal(); }
 function smallMoon(age){                                       // 칸 구석의 작은 실제 달
   const c = canvasOf(26, 26), g = c.getContext('2d'); g.translate(13, 13); moonDisc(g, 12, age); return c; }
 function paintCal(){
@@ -525,17 +529,16 @@ function paintCal(){
     } else { const mc = smallMoon(moonAge(new Date(y, m, d, 21))); mc.className = 'm'; el.appendChild(mc); }
     grid.appendChild(el);
   }
-  $('calNote').textContent = filled ? '이번 달 콜라주 ' + filled + '조각 · 계획을 다 채운 날엔 조각이 붙어요' : '계획을 다 채운 날엔 콜라주 조각이 붙어요';
+  $('calNote').textContent = (filled ? '이번 달 콜라주 ' + filled + '조각 · ' : '') + '할 일을 다 체크한 날엔 콜라주 조각이 붙어요';
   paintPlan();
 }
 function paintPlan(){
-  const k = calSel, d = dateOf(k), past = +d < +dateOf(keyOf()), list = plans[k] || [], by = focusedOn(k);
-  $('planTitle').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 계획';
-  $('plan').classList.toggle('past', past);
-  $('planState').textContent = stamps[k] ? '완성 ✦' : list.length ? list.filter(it=>(by[it.s] || 0) >= it.m*60).length + '/' + list.length : '';
-  $('planList').innerHTML = list.length ? list.map((it, i)=>{ const got = Math.floor((by[it.s] || 0)/60), ok = got >= it.m;
-    return '<div class="it' + (ok ? ' ok' : '') + '"><span>' + esc(it.s) + '</span><em>' + Math.min(got, it.m) + '/' + it.m + '분</em><button type="button" data-i="' + i + '" aria-label="지우기">×</button><u style="--w:' + Math.min(100, got/it.m*100) + '%"></u></div>'; }).join('')
-    : '<div class="none">' + (past ? '계획이 없던 날이에요' : '과목과 시간을 적어 계획을 세워요') + '</div>';
+  const k = calSel, d = dateOf(k), past = +d < +dateOf(keyOf()), list = plans[k] || [];
+  $('planTitle').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 할 일';
+  $('plan').classList.toggle('past', past); $('plan').classList.toggle('future', isFuture(k));
+  $('planState').textContent = stamps[k] ? '완성 ✦' : list.length ? list.filter(it=>it.d).length + '/' + list.length : '';
+  $('planList').innerHTML = list.length ? list.map((it, i)=>'<div class="it' + (it.d ? ' ok' : '') + '"><button type="button" class="ck" data-c="' + i + '" aria-label="체크"></button><span>' + esc(it.t) + '</span><button type="button" class="x" data-i="' + i + '" aria-label="지우기">×</button></div>').join('')
+    : '<div class="none">' + (past ? '할 일이 없던 날이에요' : '할 일을 적어 두고 하나씩 체크해요') + '</div>';
 }
 $('date').onclick = ()=>openCal();
 $('calClose').onclick = ()=>{ $('cal').hidden = true; paintStats(); };
@@ -543,9 +546,10 @@ $('calPrev').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() - 1); paintCa
 $('calNext').onclick = ()=>{ calMonth.setMonth(calMonth.getMonth() + 1); paintCal(); };
 $('calGrid').onclick = e=>{ const b = e.target.closest('.d'); if(!b || !b.dataset.k) return; calSel = b.dataset.k; paintCal(); };
 $('planList').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
-  plans[calSel].splice(+b.dataset.i, 1); if(!plans[calSel].length) delete plans[calSel]; savePlans(); paintCal(); };
-$('planAdd').onsubmit = e=>{ e.preventDefault(); const s = $('planSubj').value.trim() || subjOf(), m = +$('planMin').value;
-  (plans[calSel] = plans[calSel] || []).push({s, m}); savePlans(); $('planSubj').value = ''; $('planSubj').blur(); paintCal(); checkStamp(calSel); };
+  if(b.dataset.c != null){ toggleItem(calSel, +b.dataset.c); return; }
+  plans[calSel].splice(+b.dataset.i, 1); if(!plans[calSel].length) delete plans[calSel]; savePlans(); checkStamp(calSel); paintCal(); paintStats(); };
+$('planAdd').onsubmit = e=>{ e.preventDefault(); const t = $('planSubj').value.trim(); if(!t) return;
+  (plans[calSel] = plans[calSel] || []).push({t, d:false}); savePlans(); $('planSubj').value = ''; checkStamp(calSel); paintCal(); paintStats(); };
 
 /* ═══ 소리: 완주 화음, 포기 종 (작게) ═══ */
 let AC = null;
@@ -580,7 +584,6 @@ function tickOnce(){
   const was = remain; remain = Math.max(0, Math.round((endAt - Date.now())/1000));
   const add = Math.max(0, was - remain); rec.todaySec += add; if(cur) cur.sec += add;
   if(rec.todaySec % 15 < add) saveRec();
-  if(cur && cur.sec % 30 < add) checkStamp(keyOf());
   paint(); paintStats(); if(remain <= 0) finish();
 }
 function start(){
@@ -623,7 +626,8 @@ $('presets').onclick = e=>{ const b = e.target.closest('button'); if(!b) return;
   if(mode === 'paused'){ commit(false); }
   if(mode !== 'idle'){ mode = 'idle'; $('go').textContent = '집중 시작'; setStatus('시간을 고르고 시작하세요'); if(rig) rig.expr = ''; }
   setMins(+b.dataset.m); };
-$('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; if(b.dataset.cal){ openCal(); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
+$('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; if(b.dataset.cal){ openCal(); return; }
+  if(b.dataset.i != null){ toggleItem(keyOf(), +b.dataset.i); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
 $('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
 $('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
 try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}

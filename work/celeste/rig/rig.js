@@ -45,17 +45,49 @@ window.CelesteRig = async function(cv, opt = {}){
   const VS = `attribute vec2 p, uv, ip; varying vec2 v, w; uniform vec2 res;
     void main(){ v = uv; w = ip; gl_Position = vec4(p.x/res.x*2.-1., 1.-p.y/res.y*2., 0., 1.); }`;
   const FS = `precision mediump float; varying vec2 v, w;     // v: 레이어 그림 좌표, w: 원화 좌표(쉬는 자세)
-    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha; uniform vec3 stage;
+    uniform sampler2D img, msk, clipT; uniform vec4 clipR; uniform vec2 gaze; uniform float isIris, alpha, plaster; uniform vec3 stage;
+    // 석고: 몸에 붙은 좌표(w)로 만든 무늬라 리깅을 따라 움직인다
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)))*43758.5453); }
+    float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
+      return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), f.x), f.y); }
+    float fbm(vec2 p){ return vnoise(p)*.55 + vnoise(p*2.1 + 3.7)*.3 + vnoise(p*4.3 + 9.1)*.15; }
+    vec3 shards(vec2 p){                                  // 보로노이 조각: (경계까지 거리, 내 조각 값, 이웃 조각 값)
+      vec2 i = floor(p), f = fract(p); float d1 = 8., d2 = 8., h1 = 0., h2 = 0.;
+      for(int y = -1; y <= 1; y++) for(int x = -1; x <= 1; x++){
+        vec2 o = vec2(float(x), float(y)), id = i + o, r = o + vec2(hash(id), hash(id + 17.3))*.9 - f; float d = dot(r, r);
+        float h = hash(id + 41.7)*.5 + vnoise(id*.33)*.5;           // 이웃끼리 비슷하게 → 덩어리로 떨어진다
+        if(d < d1){ d2 = d1; h2 = h1; d1 = d; h1 = h; } else if(d < d2){ d2 = d; h2 = h; } }
+      return vec3(sqrt(d2) - sqrt(d1), h1, h2); }
     void main(){
       vec4 c = texture2D(img, v) * alpha;
       if(isIris > 0.){                                    // 눈동자는 흰자 밖으로 나가지 않게 흰자 모양으로 자른다
         vec2 e = (w + gaze - clipR.xy) / clipR.zw;
         float k = (e.x < 0. || e.y < 0. || e.x > 1. || e.y > 1.) ? 0. : texture2D(clipT, e).a;
         c *= k; }
+      if(c.a < .004){ gl_FragColor = vec4(0.); return; }
+      vec3 u = c.rgb / c.a;                                 // 미리 곱한 알파를 풀어서 계산
       vec3 m = texture2D(msk, w).rgb;                      // 단계별 색: r=손톱 g=머리 b=눈
       float g = max(max(m.r*(1.-stage.x), m.g*(1.-stage.y)), m.b*(1.-stage.z));
-      float l = dot(c.rgb, vec3(.299,.587,.114));
-      gl_FragColor = vec4(mix(c.rgb, vec3(l*1.05), g), c.a);
+      float l = dot(u, vec3(.299,.587,.114));
+      vec3 col = mix(u, vec3(l*1.05), g);
+      if(plaster < 1.){
+        // 석고: 밝은 무광 흰색으로 눌러 담고(선은 회색으로 남김), 고운 결 + 실금. 진행할수록 조각조각 벗겨진다
+        vec2 q = vec2(w.x, w.y*1.967);
+        vec2 sp = q*10.; sp += (vec2(fbm(sp*.7), fbm(sp*.7 + 7.)) - .5)*.45;      // 조각 경계를 비뚤게
+        vec3 V = shards(sp);
+        float th = plaster*1.12 - .08, edge = 1. - smoothstep(.0, .045, V.x);
+        if(V.y < th){                                       // 떨어져 나간 조각: 색이 보이고, 남은 석고 가장자리 밑에 그림자
+          col *= 1. - edge*.45*step(th, V.z);
+        } else {
+          vec3 P = mix(vec3(.42, .42, .41), vec3(.975, .968, .952), pow(l, .6));
+          P += (hash(floor(q*700.)) - .5)*.035;
+          float front = 1. - smoothstep(.0, .07, min(V.y, V.z) - max(th, .22));   // 곧 떨어질 조각 둘레부터 금이 간다
+          P *= 1. - edge*front*.5;
+          P = mix(P, vec3(1.), edge*.35*step(V.z, th));       // 떨어진 쪽과 맞닿은 면: 석고 두께의 흰 단면
+          col = P;
+        }
+      }
+      gl_FragColor = vec4(col*c.a, c.a);
     }`;
   let U, M = {}, T = {}, ORDER = [];
   function program(){
@@ -210,7 +242,7 @@ window.CelesteRig = async function(cv, opt = {}){
     const dt = S.lastT == null ? 0 : clamp(t - S.lastT, 0, .05); S.lastT = t;
     if(dt > 0) for(let i=0;i<2;i++) simulate(t, dt/2);
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
+    gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage)); gl.uniform1f(U.plaster, stage);
     headXform(t); const b = breathAt(t);
     const B = S.blink, bt = B.t < 0 ? 1 : (t - B.t);
     const one = p=>p < .07 ? p/.07 : p < .11 ? 1 : p < .22 ? 1 - (p-.11)/.11 : 0;          // 감기 빠르게, 뜨기 천천히
@@ -263,7 +295,7 @@ window.CelesteRig = async function(cv, opt = {}){
     const prog = program(); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     U = {p:gl.getAttribLocation(prog,'p'), uv:gl.getAttribLocation(prog,'uv'), ip:gl.getAttribLocation(prog,'ip')};
     [U.p, U.uv, U.ip].forEach(a=>gl.enableVertexAttribArray(a));
-    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage']) U[n] = gl.getUniformLocation(prog,n);
+    for(const n of ['res','img','msk','clipT','clipR','gaze','isIris','alpha','stage','plaster']) U[n] = gl.getUniformLocation(prog,n);
     for(const n of ORDER) T[n] = tex(imgs[n], 0);
     tex(imgs.mask, 1); gl.uniform1i(U.img, 0); gl.uniform1i(U.msk, 1); gl.uniform1i(U.clipT, 2); gl.uniform2f(U.res, IW, IH);
     for(const n of ORDER){
