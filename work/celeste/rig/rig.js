@@ -240,6 +240,7 @@ window.CelesteRig = async function(cv, opt = {}){
       else if(g === 'iris') headRigid(m, S.gaze.x, S.gaze.y);
       else if(g === 'patch'){ headRigid(m); a = name === 'eyes_closed' ? closed : name === 'mouth_smile' ? S.smile : S.frown; if(a <= .001) continue; }
       else headRigid(m);                                                                      // 얼굴·이목구비·귀·머리 조각: 통째로
+      if(g === 'iris' || g === 'eyewhite' || name.startsWith('eyelash')) a *= 1 - closed;   // 감을 땐 뜬 눈(흰자·눈동자·속눈썹)을 지워 잔상이 남지 않게
       gl.uniform1f(U.alpha, a);
       if(g === 'iris'){ const ew = RIG.layers[name.replace('irides', 'eyewhite')];
         gl.uniform1f(U.isIris, 1); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, T[name.replace('irides', 'eyewhite')]);
