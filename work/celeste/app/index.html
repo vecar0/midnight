@@ -211,7 +211,7 @@ const OBJS = ['angel','arch','armillary','astronaut','birdcage','book','bust','c
 const PARTS = '../parts/';
 // 원화(1228×2416)에서 무대에 보일 세로 범위: 머리 위 ~ 난간 아래
 const IW = 1228, IH = 2416, VIEW_Y0 = 330, VIEW_Y1 = 2150;
-const HALO = {x:618, y:478, rx:330, rot:-11};    // 원화 좌표, 정수리를 감싸는 높이·그림 속 머리 기울기
+const HALO = {x:601, y:382, rx:270, rot:-11};    // 원화 좌표, 정수리를 감싸는 높이·그림 속 머리 기울기
 
 /* ═══ 날짜로 정해지는 난수: 같은 날엔 같은 콜라주 ═══ */
 function rngOf(str){ let h = 2166136261; for(const c of str){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
