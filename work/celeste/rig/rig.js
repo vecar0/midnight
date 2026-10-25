@@ -143,8 +143,8 @@ window.CelesteRig = async function(cv, opt = {}){
     for(const d of Object.values(STR)){
       const c = d.c, n = c.x.length; c.x[0] = H.x;
       for(let i=1;i<n;i++){
-        const pull = (c.x[i-1] - c.x[i])*60, home = (H.x - c.x[i])*25;      // 늦게 따라오되
-        c.v[i] += (pull + home - c.v[i]*6)*dt;                               // 한 번에 가라앉는다 (계속 출렁이지 않게)
+        const pull = (c.x[i-1] - c.x[i])*55, home = (H.x - c.x[i])*18;      // 늦게 따라오되
+        c.v[i] += (pull + home - c.v[i]*4.6)*dt;                             // 한두 번 출렁이고 가라앉는다
       }
       for(let i=1;i<n;i++) c.x[i] += c.v[i]*dt;
     }
@@ -192,10 +192,11 @@ window.CelesteRig = async function(cv, opt = {}){
       m.pos[k] = px; m.pos[k+1] = py - .5*(sway*w)*(sway*w)/(y - h.root + 90);
     }
   }
+  let AIR = 0;
   function poseStrand(m, d){                                  // 위쪽(얼굴 옆)은 머리와 한 덩어리, 턱 아래로 갈수록 흔들림
     for(let k=0;k<m.rest.length;k+=2){
       const x = m.rest[k], y = m.rest[k+1], s = clamp((y - d.root[1])/d.len, 0, 1), w = Math.pow(sm(.28, 1, s), 1.1);
-      const sway = 26*Math.tanh((chainAt(d.c, s) - S.head.x)*d.gain/26);   // 크게 흔들려도 뚝 멈추지 않게 부드러운 한계
+      const lim = 30*opt.motion, sway = lim*Math.tanh(((chainAt(d.c, s) - S.head.x)*d.gain*2.4 + AIR*d.air)/lim);   // 관성 + 숨결에 실린 아주 느린 살랑임
       const q = hp(x, y), bt = tp(x, y), hx = bt[0] + (HT.x - S.torso.x)*(1 - s*.5), hy = bt[1];
       m.pos[k] = q[0]*(1-w) + hx*w + sway*w; m.pos[k+1] = q[1]*(1-w) + hy*w - .5*(sway*w)*(sway*w)/(y - d.root[1] + 120);
     }
@@ -213,6 +214,7 @@ window.CelesteRig = async function(cv, opt = {}){
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform3f(U.stage, sm(.5,.75,stage), sm(.25,.5,stage), sm(0,.25,stage));
     headXform(t); const b = breathAt(t);
+    AIR = (Math.sin(t*.63) + .55*Math.sin(t*1.07 + 1.9) + b*.8)*6*opt.motion;           // 숨쉴 때 어깨를 타고 머리끝이 살짝 흔들린다
     const B = S.blink, bt = B.t < 0 ? 1 : (t - B.t);
     const one = p=>p < .07 ? p/.07 : p < .11 ? 1 : p < .22 ? 1 - (p-.11)/.11 : 0;          // 감기 빠르게, 뜨기 천천히
     const blink = B.t < 0 ? 0 : Math.max(one(bt), B.double ? one(bt - .26) : 0);
@@ -274,7 +276,7 @@ window.CelesteRig = async function(cv, opt = {}){
       else { [x0, y0] = PARTS.patches[n]; w = imgs[n].naturalWidth; h = imgs[n].naturalHeight; }
       const g = RIG.layers[n]?.group;
       const hair = g === 'hairBack' || g === 'strand' || g === 'underHair';
-      if(g === 'strand'){ const Ld = RIG.layers[n]; STR[n] = {root:Ld.root, len:Ld.len, c:chain(8), ph:0, gain:5.5, side:Ld.root[0] < FACE_X ? 'L' : 'R'}; }
+      if(g === 'strand'){ const Ld = RIG.layers[n]; STR[n] = {root:Ld.root, len:Ld.len, c:chain(8), ph:0, gain:5.5, air:Ld.root[0] < FACE_X ? 1 : -.8, side:Ld.root[0] < FACE_X ? 'L' : 'R'}; }
       const bend = n === 'neck' || g === 'body';
       M[n] = mesh(n, x0, y0, w, h, hair ? 14 : bend ? 4 : 1, hair ? 64 : bend ? 24 : 1);   // 머리카락(과 목)만 그물, 나머지는 사각형 하나(휘지 않음)
       if(!RIG.layers[n]) M[n].group = 'patch';
