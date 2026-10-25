@@ -11,7 +11,7 @@ See-through(AI)가 나눈 레이어는 구조와 '가려진 부분'이 완전하
       work/celeste/parts/char.webp                원화 배경 제거본 (반 크기 1228×2416)
 출력  work/celeste/rig/*.webp, rig.json, check.png
 """
-import json
+import json, sys
 from pathlib import Path
 import cv2, numpy as np
 
@@ -240,12 +240,13 @@ def main():
             uw[..., c] = np.clip(uw[..., c] * k_ + b_, 0, 255)
         ua_ = (uw.min(axis=2) < 238).astype(np.float32)          # 편집본의 흰 배경은 뺀다
         ua_ = cv2.GaussianBlur(cv2.morphologyEx(ua_, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)), (0, 0), 1)
-        reg = cv2.GaussianBlur(cv2.dilate(hole, np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
+        earm = ((L['earMoon'][1] > .1) | (L['earStar'][1] > .1)).astype(np.uint8)    # 귀걸이 뒤도 귀걸이 없는 그림으로
+        reg = cv2.GaussianBlur(cv2.dilate(hole | earm, np.ones((9, 9), np.uint8)).astype(np.float32), (0, 0), 2)
         ar = (reg * ua_ * (yy < RAIL_Y)).astype(np.float32)
         ys_, xs_ = np.where(ar > .01); x0, x1, y0, y1 = xs_.min(), xs_.max() + 1, ys_.min(), ys_.max() + 1
         cv2.imwrite(str(OUT / 'underHair.webp'), np.dstack([uw[y0:y1, x0:x1], ar[y0:y1, x0:x1] * 255]).astype(np.uint8), [cv2.IMWRITE_WEBP_QUALITY, 92])
         meta['layers']['underHair'] = {'xy': [int(x0), int(y0)], 'size': [int(x1 - x0), int(y1 - y0)], 'group': 'underHair'}
-        first = min(meta['order'].index(n) for n, _, _ in STRANDS if n in meta['order'])
+        first = min(meta['order'].index(n) for n in [n for n, _, _ in STRANDS] + ['earMoon', 'earStar'] if n in meta['order'])
         meta['order'].insert(first, 'underHair')
         print('밑그림 정렬 점', len(good))
     for name, root, length in STRANDS:
@@ -263,3 +264,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # 프로크리에이트에서 손본 레이어가 있으면 덮어쓴다 (tools/celeste_psd_roundtrip.py)
+    import subprocess
+    subprocess.run([sys.executable, str(ROOT / 'tools/celeste_psd_roundtrip.py'), 'apply'])

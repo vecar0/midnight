@@ -145,8 +145,8 @@ function simulate(t, dt){
   }
   // 귀걸이: 고개가 움직인 가속도를 받는 진자
   for(const e of Object.values(EAR)){
-    const acc = -H.vx*.02 - S.roll.vx*6 - S.wind*.0012;
-    e.v += (-e.a*38/e.len + acc*30 - e.v*2.2)*dt; e.a += e.v*dt; e.a = clamp(e.a, -.45, .45);
+    const acc = -H.vx*.008 - S.roll.vx*2.5;                     // 귀걸이는 살짝만 (빈자리가 보이지 않게)
+    e.v += (-e.a*45/e.len + acc*30 - e.v*4.5)*dt; e.a += e.v*dt; e.a = clamp(e.a, -.12, .12);
   }
 }
 function breathAt(t){ return (Math.sin(t*1.5)*.5 + .5); }
