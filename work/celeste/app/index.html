@@ -515,13 +515,13 @@ function drawHalo(t, p, head, roll){
   });
 }
 
-/* ═══ 기록 (기존 앱과 같은 키) ═══ */
+/* ═══ 기록 (bleu.* — Minuit 앱의 midnight.* 와 따로) ═══ */
 const today = () => new Date().toDateString();
 let rec = {day:today(), todaySec:0, done:0, best:0, sessions:[]};
-try{ const s = JSON.parse(localStorage.getItem('midnight.rec') || 'null'); if(s) rec = Object.assign(rec, s); }catch(e){}
+try{ const s = JSON.parse(localStorage.getItem('bleu.rec') || 'null'); if(s) rec = Object.assign(rec, s); }catch(e){}
 if(!Array.isArray(rec.sessions)) rec.sessions = [];
 if(rec.day !== today()){ rec.day = today(); rec.todaySec = 0; }
-function saveRec(){ try{ localStorage.setItem('midnight.rec', JSON.stringify(rec)); }catch(e){} }
+function saveRec(){ try{ localStorage.setItem('bleu.rec', JSON.stringify(rec)); }catch(e){} }
 let cur = null;
 const subjOf = () => ($('subject').value.trim() || '자유 집중');
 function commit(done){ if(!cur) return;
@@ -747,8 +747,8 @@ $('recent').onclick = e=>{ const b = e.target.closest('button'); if(!b) return; 
   if(b.dataset.i != null){ toggleItem(keyOf(), +b.dataset.i); return; } if(mode === 'run') return; $('subject').value = b.dataset.s; };
 $('subject').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('subject').blur(); } });
 $('subject').addEventListener('blur', ()=>setTimeout(()=>{ window.scrollTo(0, 0); fit(); }, 60));
-try{ $('subject').value = localStorage.getItem('midnight.subj') || ''; }catch(e){}
-$('subject').addEventListener('change', ()=>{ try{ localStorage.setItem('midnight.subj', $('subject').value.trim()); }catch(e){} });
+try{ $('subject').value = localStorage.getItem('bleu.subj') || ''; }catch(e){}
+$('subject').addEventListener('change', ()=>{ try{ localStorage.setItem('bleu.subj', $('subject').value.trim()); }catch(e){} });
 $('go').onclick = start;
 $('quit').onclick = giveUp;
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && mode === 'run'){ tickOnce(); if(mode === 'run') keepAwake(true); } });   // 화면 꺼짐 방지는 앱을 다시 열면 새로 걸어야 한다
