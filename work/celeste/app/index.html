@@ -78,7 +78,11 @@
   /* 파란 마름모 띠 */
   #bottom::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid var(--ink);
     background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 0L20 10 10 20 0 10Z' fill='%231E22D6'/%3E%3C/svg%3E") 0 0/20px 20px repeat-x,#fff}
-  #status{font:12px 'American Typewriter','Courier New',monospace;color:#333;text-align:center;min-height:18px;margin-bottom:10px}
+  #sline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px;padding:0 2px}
+  #status{font:12px 'American Typewriter','Courier New',monospace;color:#333;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mini{flex:none;font:italic 13px var(--serif);color:var(--ink);display:flex;gap:10px;align-items:baseline}
+  #mini i{font-style:normal;font:9px var(--sans);letter-spacing:.2em;color:var(--grey);margin-right:3px}
+  #mini b{font-weight:400;color:var(--bleu)}
   #btns{display:flex;gap:10px}
   #go{flex:1;height:52px;background:var(--bleu);color:#fff;font:600 15px var(--sans);letter-spacing:.2em;box-shadow:5px 5px 0 var(--ink)}
   #go.run{background:var(--ink)}
@@ -99,17 +103,17 @@
     #app{display:grid;grid-template-columns:minmax(300px,42%) 1fr;grid-template-rows:auto 1fr;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
     #top{grid-column:1;grid-row:1;padding:calc(6px + env(safe-area-inset-top)) 12px 0 14px}
     #brand{margin-bottom:6px;padding:4px 8px} #brand::after{display:none}
-    #time{font-size:46px;margin-top:2px;box-shadow:4px 4px 0 var(--bleu)}
-    #moon{width:84px;height:84px;margin:-14px -8px -12px -6px}
+    #time{font-size:58px;margin-top:4px;box-shadow:5px 5px 0 var(--bleu)}
+    #moon{width:100px;height:100px;margin:-16px -10px -14px -8px}
     #moonTxt{font-size:9px}
-    #pomo{margin-top:6px} #row{margin-top:6px;padding:2px 4px 2px 8px}
+    #pomo{margin-top:10px} #row{margin-top:10px;padding:2px 4px 2px 8px}
     #presets button{height:28px;min-width:40px;font-size:13px}
     #subject{font-size:15px;padding:4px 0}
-    #status{margin-bottom:6px;min-height:0}
+    #sline{margin-bottom:6px}
     #go,#quit{height:42px}
     #stage{grid-column:2;grid-row:1/3}
-    #bottom{grid-column:1;grid-row:2;margin:0 0 20px 14px;padding:28px 12px 4px;align-self:end;border:1px solid var(--ink);border-bottom:0}
-    #recent{display:none}
+    #bottom{grid-column:1;grid-row:2;margin:0 0 20px 14px;padding:30px 12px 12px;align-self:end;border:1px solid var(--ink);border-bottom:0}
+    #recent{margin-top:8px}
   }
   /* ── 달력 ── */
   #date{font:italic 12px var(--serif);color:#bdbdb8;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
@@ -182,7 +186,7 @@
   .tw{animation:tw 3s ease-in-out infinite alternate}
   @keyframes tw{from{transform:scale(.82);opacity:.75}to{transform:scale(1.12);opacity:1}}
   .orb{animation:orb 16s ease-in-out infinite alternate}
-  @keyframes orb{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+  @keyframes orb{0%{transform:rotate(-3deg) translateY(-5px) scaleY(.94)}50%{transform:rotate(.5deg) translateY(4px) scaleY(1.05)}100%{transform:rotate(3deg) translateY(-2px) scaleY(.97)}}
   .layer{will-change:transform}
   @media (prefers-reduced-motion:reduce){ .layer .o canvas,.tw,.orb{animation:none} }
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
@@ -215,7 +219,7 @@
   <div id="fgo" class="layer"></div><svg id="fg1" class="layer"></svg>
   <div id="stageBand"></div>
   <footer id="bottom">
-    <div id="status">시간을 고르고 시작하세요</div>
+    <div id="sline"><span id="status">시간을 고르고 시작하세요</span><span id="mini"></span></div>
     <div id="btns"><button id="go">집중 시작</button><button id="quit" hidden>그만두기</button></div>
   </footer>
 </div>
@@ -461,10 +465,15 @@ async function buildCollage(){
   // 8) 타자기 글귀 상자 + 곡선 글귀
   Object.assign($('stageLbl').style, side === 'L' ? {left:'auto', right:'12px'} : {left:'12px', right:'auto'});   // 이름표는 글귀 반대쪽
   const topB = land ? 0 : $('top').getBoundingClientRect().bottom - ab.top;      // 위쪽 글자판 아래부터
-  { const L = pick(LINES), w = land ? Math.min(170, W*.4) : Math.min(140, W*.34), x = side === 'L' ? 4 : W - w - 4, y = Math.max(H*rr(.31, .34), topB + 14), lh = land ? 12 : 10.5;
-    f1 += `<path d="M${x} ${y}H${x+w}V${y+L.length*lh+10}H${x+w-12}V${y+L.length*lh+20}H${x}Z" fill="#fff" stroke="${K}" stroke-width=".8"/>`;
-    f1 += `<text x="${x+8}" y="${y+16}" font-family="'American Typewriter','Courier New',monospace" font-size="${land ? 9.5 : 8.2}" fill="${K}">` +
-      L.map((l, i)=>`<tspan x="${x+8}" dy="${i ? lh : 0}">${l.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</tspan>`).join('') + '</text>'; }
+  { // 영어·프랑스어 한 구절: 작은 흰 카드 + 파란 블록 그림자 + 작은 머리글
+    const L = pick(LINES), fs = land ? 8.6 : 7.6, lh = fs*1.32, w = land ? Math.min(132, W*.26) : Math.min(112, W*.28);
+    const h = 18 + L.length*lh + 7, x = side === 'L' ? 10 : W - w - 10, y = Math.max(H*rr(.31, .34), topB + 14);
+    const esc2 = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    f1 += `<rect x="${x+3}" y="${y+3}" width="${w}" height="${h}" fill="${B}"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="${K}" stroke-width=".7"/>`;
+    f1 += `<text x="${x+7}" y="${y+10}" font-family="-apple-system,system-ui,sans-serif" font-size="5.6" font-weight="600" letter-spacing="1.6" fill="${B}">NOTE · ${String(1 + Math.floor(R()*28)).padStart(2,'0')}</text>`;
+    f1 += `<line x1="${x+7}" y1="${y+13}" x2="${x+w-7}" y2="${y+13}" stroke="${K}" stroke-width=".4" stroke-dasharray="1.5 1.5"/>`;
+    f1 += `<text x="${x+7}" y="${y+13+lh}" font-family="'Bodoni 72','Didot','Noto Serif KR',serif" font-style="italic" font-size="${fs}" fill="${K}">` +
+      L.map((l, i)=>`<tspan x="${x+7}" dy="${i ? lh : 0}">${esc2(l)}</tspan>`).join('') + '</text>'; }
   { const r = W*rr(.32, .42), cx = sx(W*rr(.7, .9)), cy = H*rr(.72, .86);
     b2 += `<path id="arc" d="M${cx - r} ${cy}A${r} ${r} 0 1 1 ${cx + r} ${cy}A${r} ${r} 0 1 1 ${cx - r} ${cy}" fill="none" stroke="${B}" stroke-width=".6" stroke-dasharray="1 3"/>
       <text font-family="var(--serif),serif" font-style="italic" font-size="11" fill="${B}" letter-spacing="1"><textPath href="#arc">${pick(ARC_TXT).repeat(2)}</textPath></text>`; }
@@ -543,7 +552,12 @@ function commit(done){ if(!cur) return;
   cur = null; saveRec(); paintStats(); }
 const esc = t => t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtMin = sec => { const m = Math.round(sec/60); return m >= 60 ? Math.floor(m/60)+'시간 '+(m%60)+'분' : m+'분'; };
+function paintMini(){
+  const list = plans[keyOf()] || [], done = list.filter(it=>it.d).length;
+  $('mini').innerHTML = '<span><i>TODAY</i>' + fmtMin(rec.todaySec) + '</span>' + (list.length ? '<span><i>TO-DO</i><b>' + done + '</b>/' + list.length + '</span>' : '');
+}
 function paintStats(){
+  paintMini();
   $('sTime').textContent = fmtMin(rec.todaySec); $('sCnt').textContent = rec.done; $('sBest').textContent = rec.best + '분';
   const plan = plans[keyOf()] || [];
   if(plan.length){
