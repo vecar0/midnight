@@ -176,6 +176,15 @@
     #stageBand{display:block;position:absolute;left:0;right:0;bottom:0;height:20px;z-index:8;border-top:1px solid var(--ink);
       background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10 0L20 10 10 20 0 10Z' fill='%231E22D6'/%3E%3C/svg%3E") 0 0/20px 20px repeat-x,#fff}
   }
+  /* 배경이 살아 있게: 오브젝트는 떠다니고, 별은 반짝이고, 궤도는 천천히 흔들린다. 층마다 기울기·고개를 따라 깊이감 */
+  .layer .o canvas{animation:drift var(--d,7s) ease-in-out var(--dl,0s) infinite alternate;will-change:transform}
+  @keyframes drift{from{transform:translateY(calc(var(--a,4px)*-1)) rotate(calc(var(--r,1deg)*-1))}to{transform:translateY(var(--a,4px)) rotate(var(--r,1deg))}}
+  .tw{animation:tw 3s ease-in-out infinite alternate}
+  @keyframes tw{from{transform:scale(.82);opacity:.75}to{transform:scale(1.12);opacity:1}}
+  .orb{animation:orb 16s ease-in-out infinite alternate}
+  @keyframes orb{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+  .layer{will-change:transform}
+  @media (prefers-reduced-motion:reduce){ .layer .o canvas,.tw,.orb{animation:none} }
   #loading{position:absolute;inset:0;display:grid;place-items:center;font:italic 13px var(--serif);color:var(--grey);z-index:1}
 </style></head><body>
 <div id="app">
@@ -301,7 +310,7 @@ function paintMoon(p){
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, S, S);
   const c = S/2, r = 40;
   g.save(); g.translate(c + 4, c - 2);
-  g.fillStyle = '#8a8a86'; g.beginPath(); g.arc(-11, 9, r, 0, Math.PI*2); g.fill();          // 비켜 놓은 회색 원
+  g.fillStyle = '#121212'; g.beginPath(); g.arc(-11, 9, r, 0, Math.PI*2); g.fill();          // 비켜 놓은 검은 원
   moonDisc(g, r, age);
   // 흰 궤도(앞쪽 반만 달 위로) + 진행도 별
   g.rotate(-.42); const orx = r + 16, ory = 11;
@@ -384,8 +393,9 @@ function dove(img, kind){
   else c = sil(kind === 'b' ? B : K);
   return TC[key] = c;
 }
-const star = (x, y, R, fill, stroke = 'none', rot = 0) => { const k = R*.13;
-  return `<path transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot})" d="M0 ${-R}Q${k} ${-k} ${R} 0Q${k} ${k} 0 ${R}Q${-k} ${k} ${-R} 0Q${-k} ${-k} 0 ${-R}Z" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/>`; };
+let twk = 0;
+const star = (x, y, R, fill, stroke = 'none', rot = 0) => { const k = R*.13, d = (2.6 + (twk++*1.37)%3.2).toFixed(2), dl = (-(twk*.71)%4).toFixed(2);
+  return `<g class="tw" style="transform-origin:${x.toFixed(1)}px ${y.toFixed(1)}px;animation-duration:${d}s;animation-delay:${dl}s"><path transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot})" d="M0 ${-R}Q${k} ${-k} ${R} 0Q${k} ${k} 0 ${R}Q${-k} ${k} ${-R} 0Q${-k} ${-k} 0 ${-R}Z" fill="${fill}" stroke="${stroke}" stroke-width="1.2"/></g>`; };
 
 let FIG = null, collageBusy = 0;
 async function buildCollage(){
@@ -423,8 +433,9 @@ async function buildCollage(){
   // 4) 궤도선(가슴 중심, 앞쪽 반은 캐릭터 위로), 큰 원, 긴 직선
   const orbits = [];
   for(let i = 0; i < 3; i++){ const rx = W*rr(.45, .85), ry = rx*rr(.18, .34), rot = rr(-22, 22); orbits.push([rx, ry, rot]);
-    b1 += `<ellipse cx="${chest.x}" cy="${chest.y}" rx="${rx}" ry="${ry}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${B}" stroke-width="${i ? .8 : 1.6}" opacity=".75"/>`;
-    f1 += `<path d="M${chest.x - rx} ${chest.y}A${rx} ${ry} 0 0 0 ${chest.x + rx} ${chest.y}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${i ? B : '#fff'}" stroke-width="${i ? .8 : 1.6}" opacity=".85"/>`; }
+    const orb = `class="orb" style="transform-origin:${chest.x}px ${chest.y}px;animation-duration:${14 + i*5}s;animation-delay:${-i*4}s"`;
+    b1 += `<g ${orb}><ellipse cx="${chest.x}" cy="${chest.y}" rx="${rx}" ry="${ry}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${B}" stroke-width="${i ? .8 : 1.6}" opacity=".75"/></g>`;
+    f1 += `<g ${orb}><path d="M${chest.x - rx} ${chest.y}A${rx} ${ry} 0 0 0 ${chest.x + rx} ${chest.y}" transform="rotate(${rot} ${chest.x} ${chest.y})" fill="none" stroke="${i ? B : '#fff'}" stroke-width="${i ? .8 : 1.6}" opacity=".85"/></g>`; }
   for(let i = 0; i < 2; i++) b1 += `<circle cx="${W*rr(0, 1)}" cy="${H*rr(.15, .85)}" r="${W*rr(.3, .6)}" fill="none" stroke="${B}" stroke-width=".7" ${i ? 'stroke-dasharray="3 4"' : ''} opacity=".6"/>`;
   for(let i = 0; i < 5; i++){ const y1 = H*rr(0, 1), y2 = H*rr(0, 1);
     b2 += `<line x1="0" y1="${y1}" x2="${W}" y2="${y2}" stroke="${B}" stroke-width=".6" opacity=".55"/>`; }
@@ -467,7 +478,7 @@ async function buildCollage(){
     const c = treat(imgs[i], o.kind, o.glitch, o.sticker, dayKey() + i);
     const h = H*o.h, w = h * c.width/c.height, el = document.createElement('div'); el.className = 'o';
     Object.assign(el.style, {left:(OX + o.x*W) + 'px', top:(o.y*H) + 'px', width:w + 'px', transform:`rotate(${o.rot}deg)`});
-    el.appendChild(cloneCanvas(c)); (o.front ? fo : bo).appendChild(el); });
+    el.appendChild(cloneCanvas(c)); drift(el, i, 1); (o.front ? fo : bo).appendChild(el); });
   // 비둘기 떼: 대각선으로 흩어진다. 얼굴 둘레 피함
   const n = 7 + Math.floor(R()*4), dir = R() < .5 ? 1 : -1;
   for(let i = 0, t = 0; i < n && t < 60; t++){
@@ -475,7 +486,7 @@ async function buildCollage(){
     if(nearFace(x, y, s*.6) || hitsMoon(x - s/2, y - s/2, s, s)) continue;
     const kind = pick(['w','w','w','b','b','k']), c = cloneCanvas(dove(doveImg, kind)), el = document.createElement('div'); el.className = 'o';
     Object.assign(el.style, {left:(OX + x - s/2) + 'px', top:(y - s/2) + 'px', width:s + 'px', transform:`scaleX(${dir}) rotate(${rr(-25, 15)}deg)`});
-    el.appendChild(c); (i < n - 2 ? bo : fo).appendChild(el); i++; }
+    el.appendChild(c); drift(el, i + 10, 1.8); (i < n - 2 ? bo : fo).appendChild(el); i++; }
   $('bgo').replaceChildren(bo); $('fgo').replaceChildren(fo);
   for(const id of ['bg1','bg2','fg1']) $(id).setAttribute('viewBox', `0 0 ${AW} ${H}`);
   const g = t => `<g transform="translate(${OX} 0)">${t}</g>`;
@@ -483,6 +494,9 @@ async function buildCollage(){
   $('bg1').innerHTML = defs + g(b1); $('bg2').innerHTML = g(b2); $('fg1').innerHTML = g(f1);
   window.TODAY = objs.map(o=>o.n + '·' + TREAT_KO[o.kind] + (o.glitch ? '·글리치' : ''));
 }
+function drift(el, i, amp){                 // 떠다니는 박자·폭을 오브젝트마다 다르게
+  el.style.setProperty('--d', (5 + (i*1.73)%5).toFixed(2) + 's'); el.style.setProperty('--dl', (-(i*2.1)%6).toFixed(2) + 's');
+  el.style.setProperty('--a', (amp*(3 + (i*.9)%3)).toFixed(1) + 'px'); el.style.setProperty('--r', (amp*(.8 + (i*.37)%1)).toFixed(2) + 'deg'); }
 function cloneCanvas(c){ const o = canvasOf(c.width, c.height); o.getContext('2d').drawImage(c, 0, 0); return o; }
 
 /* ═══ 헤일로: 머리 뒤(위쪽 반원)와 앞(아래쪽 반원)으로 나눠 그린다. 별이 진행도만큼 돈다 ═══ */
@@ -790,6 +804,10 @@ if('serviceWorker' in navigator && (location.protocol === 'https:' || location.h
 
 /* ═══ 시작 ═══ */
 let rig = null, shown = 0;
+const PAR = [['bg1', -.35], ['bgo', -.6], ['bg2', -.8], ['fgo', 1.5], ['fg1', 1.2]];
+function parallax(t){                       // 고개·기울기를 따라 뒤는 반대로, 앞은 더 크게 → 깊이감
+  const S = rig.S, sc = FIG ? FIG.sc : .25, hx = S.head.x*sc*2 + S.tilt.x*10, hy = S.tilt.y*6 + Math.sin(t*.21)*2;
+  for(const [id, k] of PAR){ const el = $(id); if(el) el.style.transform = `translate3d(${(hx*k).toFixed(2)}px,${(hy*k).toFixed(2)}px,0) scale(1.02)`; } }
 (async ()=>{
   fit(); setPomo(pomo); paintStats();
   ['haloB','haloF'].forEach(id=>{ $(id).setAttribute('viewBox', `0 0 ${IW} ${IH}`); });
@@ -802,6 +820,7 @@ let rig = null, shown = 0;
     shown += ((plasterWanted() ? 0 : 1) - shown) * .025;
     rig.draw(ms/1000, shown);
     drawHalo(ms/1000, progress(), rig.S.head, rig.S.roll.x);         // 헤일로는 머리를 따라 움직이고 계속 돈다
+    parallax(ms/1000);
     requestAnimationFrame(loop);
   };
   if(location.hash !== '#still') requestAnimationFrame(loop);

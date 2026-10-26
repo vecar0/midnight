@@ -17,7 +17,7 @@ window.CelesteRig = async function(cv, opt = {}){
     gaze:{x:0, y:0, tx:0, ty:0, next:0},                      // 눈동자
     blink:{t:-1, next:1.5, double:false},
     roll:{x:0, y:0, vx:0, vy:0, tx:0, next:0},              // 고개 기울기(라디안)
-    smile:0, frown:0, react:0, eyeC:1, shift:{x:0, y:0, next:0}, sigh:{t:-1, next:25}, smileAt:{until:0, next:8},
+    smile:0, frown:0, react:0, eyeC:1, shift:{x:0, y:0, next:0}, nod:{next:5}, sigh:{t:-1, next:25}, smileAt:{until:0, next:8},
     torso:{x:0, y:0, vx:0, vy:0},                             // 상체: 고개를 조금 늦게, 조금만 따라온다
     breath:{ph:0, v:0},                                       // 숨: 들숨 짧고 날숨 길게, 박자도 조금씩 다르게
     wind:0, windT:0, windV:0,
@@ -100,6 +100,8 @@ window.CelesteRig = async function(cv, opt = {}){
     const idleX = (Math.sin(t*.37)*3.0 + Math.sin(t*.61 + 1.3)*1.8 + Math.sin(t*1.13 + .4)*.55)*.12*opt.motion;   // 쉬는 동안 흔들림은 아주 조금 → 머리카락은 움직임이 있을 때만
     const idleY = Math.sin(t*.29 + 2)*.05;                    // 상하는 확정값 그대로(배율 없음)
     let glance = false;
+    // 터치했을 때처럼 고개를 살짝 튕기는 움직임을 가끔 저절로 (눈 뜨고 있을 때)
+    if(t > S.nod.next){ if(S.eyeC < .1){ const k = rnd(.55, 1); H.vy -= 8*k; S.roll.vx += rnd(-.06, .06)*k; } S.nod.next = t + rnd(6, 14); }
     if(t > S.shift.next){ S.shift.x = rnd(-.9, .9)*opt.motion; S.shift.y = rnd(-.015, .015); S.shift.next = t + rnd(1.2, 3.4); }
     // 한숨: 20~45초에 한 번, 깊게 들이쉬고 고개를 살짝 숙였다 든다
     if(t > S.sigh.next){ S.sigh.t = t; S.sigh.next = t + rnd(20, 45); }
